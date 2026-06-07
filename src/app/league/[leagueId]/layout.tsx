@@ -1,10 +1,12 @@
+"use client";
+
 import { ReactNode } from "react";
 import Link from "next/link";
 
 interface LeagueLayoutProps {
   children: ReactNode;
   params: {
-    leagueId: string; // MUST match folder name exactly
+    leagueId: string;
   };
 }
 
