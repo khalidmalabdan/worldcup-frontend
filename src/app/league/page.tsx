@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/api/client";
+import api from "@/src/api/client";
 import Link from "next/link";
 
 interface League {
