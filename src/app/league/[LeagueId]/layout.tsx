@@ -4,7 +4,7 @@ import Link from "next/link";
 interface LeagueLayoutProps {
   children: ReactNode;
   params: {
-    leagueId: string;
+    leagueId: string; // MUST match folder name exactly
   };
 }
 
