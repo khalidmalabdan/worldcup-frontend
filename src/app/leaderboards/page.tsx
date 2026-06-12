@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/src/api/client";
+import api from "@/api/client";
+import PageContainer from "@/components/ui/PageContainer";
+import PageHeader from "@/components/ui/PageHeader";
+import Loading from "@/components/Loading";
+import EmptyState from "@/components/ui/EmptyState";
+import Button from "@/components/ui/Button";
 
 interface LeagueMember {
   userId: string;
@@ -24,6 +29,28 @@ interface League {
   members: LeagueMember[];
 }
 
+// Normalize backend league shape
+function normalizeLeague(l: any): League {
+  return {
+    id: l.id,
+    name: l.name ?? "Global League",
+    members: (l.members ?? []).map((m: any) => ({
+      userId: m.userId,
+      name: m.name ?? "Unknown",
+      points: m.points ?? 0,
+      weeklyPoints: m.weeklyPoints ?? 0,
+      monthlyPoints: m.monthlyPoints ?? 0,
+      exactScores: m.exactScores ?? 0,
+      correctScorers: m.correctScorers ?? 0,
+      correctAssists: m.correctAssists ?? 0,
+      achievements: m.achievements ?? [],
+      rank: m.rank ?? null,
+      mostImproved: m.mostImproved ?? false,
+      doublePointUsed: m.doublePointUsed ?? false,
+    })),
+  };
+}
+
 export default function LeaderboardsPage() {
   const [league, setLeague] = useState<League | null>(null);
   const [tab, setTab] = useState<"all" | "weekly" | "monthly">("all");
@@ -33,8 +60,11 @@ export default function LeaderboardsPage() {
     async function load() {
       try {
         const res = await api.get("/leagues");
-        const globalLeague = res.data[0];
+        const globalLeague = normalizeLeague(res.data[0]);
         setLeague(globalLeague);
+      } catch (err) {
+        console.error("Failed to load leaderboard:", err);
+        setLeague(null);
       } finally {
         setLoading(false);
       }
@@ -42,21 +72,8 @@ export default function LeaderboardsPage() {
     load();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
-        Loading leaderboard...
-      </div>
-    );
-  }
-
-  if (!league) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        League not found
-      </div>
-    );
-  }
+  if (loading) return <Loading />;
+  if (!league) return <EmptyState message="League not found." />;
 
   const sortedMembers = [...league.members].sort((a, b) => {
     if (tab === "all") return b.points - a.points;
@@ -65,35 +82,33 @@ export default function LeaderboardsPage() {
   });
 
   const getPoints = (m: LeagueMember) =>
-    tab === "all" ? m.points : tab === "weekly" ? m.weeklyPoints : m.monthlyPoints;
+    tab === "all"
+      ? m.points
+      : tab === "weekly"
+      ? m.weeklyPoints
+      : m.monthlyPoints;
 
   const podium = sortedMembers.slice(0, 3);
   const others = sortedMembers.slice(3);
 
   return (
-    <div className="max-w-3xl mx-auto py-10 space-y-10">
-
-      {/* TITLE */}
-      <h1 className="text-3xl font-bold text-center">Leaderboard</h1>
+    <PageContainer size="md">
+      <PageHeader title="Leaderboard" />
 
       {/* TABS */}
-      <div className="flex justify-center gap-3">
+      <div className="flex justify-center gap-3 mb-6">
         {[
           { key: "all", label: "All‑Time" },
           { key: "weekly", label: "Weekly" },
           { key: "monthly", label: "Monthly" },
         ].map((t) => (
-          <button
+          <Button
             key={t.key}
+            variant={tab === t.key ? "primary" : "secondary"}
             onClick={() => setTab(t.key as any)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-              tab === t.key
-                ? "bg-blue-600 text-white shadow"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -102,12 +117,16 @@ export default function LeaderboardsPage() {
         {podium.map((m, i) => (
           <div
             key={m.userId}
-            className={`flex flex-col items-center p-4 rounded-xl shadow-md w-28 animate-fade-in`}
+            className="flex flex-col items-center p-4 rounded-xl shadow-md w-28 bg-white animate-fade-in"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div
               className={`text-3xl font-bold ${
-                i === 0 ? "text-yellow-500" : i === 1 ? "text-gray-400" : "text-amber-700"
+                i === 0
+                  ? "text-yellow-500"
+                  : i === 1
+                  ? "text-gray-400"
+                  : "text-amber-700"
               }`}
             >
               {i + 1}
@@ -119,8 +138,8 @@ export default function LeaderboardsPage() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white shadow rounded-xl p-4">
-        <table className="w-full text-left">
+      <div className="bg-white shadow rounded-xl p-4 mt-10 overflow-x-auto">
+        <table className="w-full text-left min-w-[500px]">
           <thead>
             <tr className="border-b text-gray-600">
               <th className="py-2">Rank</th>
@@ -180,6 +199,6 @@ export default function LeaderboardsPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </PageContainer>
   );
 }

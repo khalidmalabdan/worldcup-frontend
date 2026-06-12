@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/api/client";
+import { getGroupForMatch } from "@/utils/groups";
 
 interface Match {
   id: string;
@@ -25,7 +26,20 @@ interface TeamStanding {
   points: number;
 }
 
-export default function GroupsPage() {
+// ✅ Normalize backend match shape + ensure group exists
+function normalizeMatch(m: any): Match {
+  return {
+    id: m.id ?? m.matchId,
+    homeTeam: m.homeTeam ?? m.home,
+    awayTeam: m.awayTeam ?? m.away,
+    homeScore: m.homeScore ?? m.home_score ?? null,
+    awayScore: m.awayScore ?? m.away_score ?? null,
+    status: m.status ?? "finished",
+    group: m.group ?? getGroupForMatch(m.homeTeam ?? m.home, m.awayTeam ?? m.away),
+  };
+}
+
+export default function GroupStandingPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +47,13 @@ export default function GroupsPage() {
     async function load() {
       try {
         const res = await api.get("/matches");
-        setMatches(res.data.matches || res.data);
+        const raw = res.data.matches || res.data;
+
+        // ✅ Apply normalization to every match
+        setMatches(raw.map(normalizeMatch));
+      } catch (err) {
+        console.error("Failed to load matches:", err);
+        setMatches([]);
       } finally {
         setLoading(false);
       }
@@ -111,12 +131,10 @@ export default function GroupsPage() {
       }
     });
 
-    // Compute goal difference
     Object.values(table).forEach((t) => {
       t.goalDiff = t.goalsFor - t.goalsAgainst;
     });
 
-    // Sort standings
     return Object.values(table).sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;

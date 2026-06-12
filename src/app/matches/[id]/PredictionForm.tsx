@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import api from "@/src/api/client";
+import api from "@/api/client";
+import Button from "@/components/ui/Button";
+import ErrorMessage from "@/components/ui/Error";
+import { useTranslations } from "next-intl";
 
-interface PredictionFormProps {
+interface Props {
   matchId: string;
   homeTeam: string;
   awayTeam: string;
-  initialHomeScore?: number;
-  initialAwayScore?: number;
+  initialHomeScore: number;
+  initialAwayScore: number;
   onSaved?: () => void;
 }
 
@@ -16,81 +19,189 @@ export default function PredictionForm({
   matchId,
   homeTeam,
   awayTeam,
-  initialHomeScore = 0,
-  initialAwayScore = 0,
-  onSaved,
-}: PredictionFormProps) {
-  const [homeScore, setHomeScore] = useState(initialHomeScore);
-  const [awayScore, setAwayScore] = useState(initialAwayScore);
+  initialHomeScore,
+  initialAwayScore,
+  onSaved
+}: Props) {
+  const t = useTranslations("prediction");
 
+  const [homeScore, setHomeScore] = useState(String(initialHomeScore ?? 0));
+  const [awayScore, setAwayScore] = useState(String(initialAwayScore ?? 0));
+
+  const [scorers, setScorers] = useState<string[]>([]);
+  const [assisters, setAssisters] = useState<string[]>([]);
+
+  const [scorerInput, setScorerInput] = useState("");
+  const [assistInput, setAssistInput] = useState("");
+
+  const [doublePoint, setDoublePoint] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function addScorer() {
+    const v = scorerInput.trim();
+    if (!v) return;
+    setScorers((prev) => [...prev, v]);
+    setScorerInput("");
+  }
+
+  function removeScorer(name: string) {
+    setScorers((prev) => prev.filter((s) => s !== name));
+  }
+
+  function addAssist() {
+    const v = assistInput.trim();
+    if (!v) return;
+    setAssisters((prev) => [...prev, v]);
+    setAssistInput("");
+  }
+
+  function removeAssist(name: string) {
+    setAssisters((prev) => prev.filter((s) => s !== name));
+  }
+
+  async function submit() {
     setSaving(true);
     setError("");
-    setSuccess("");
 
     try {
       await api.post(`/matches/${matchId}/predictions`, {
-        homeScore,
-        awayScore,
+        homeScore: Number(homeScore),
+        awayScore: Number(awayScore),
+        scorers,
+        assisters,
+        goalMinutes: [],
+        doublePoint
       });
 
-      setSuccess("Prediction saved!");
-
-      if (onSaved) onSaved();
-    } catch {
-      setError("Failed to save prediction");
+      onSaved?.();
+    } catch (err) {
+      console.error("Failed to save prediction:", err);
+      setError(t("errorSaving"));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border max-w-md mx-auto">
-      <h2 className="text-xl font-semibold mb-4 text-center">
-        Your Prediction
-      </h2>
+    <div className="space-y-4 border p-4 rounded bg-white shadow-sm">
+      <h2 className="font-semibold text-xl">{t("title")}</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        {success && <p className="text-green-600 text-center">{success}</p>}
+      {error && <ErrorMessage message={error} />}
 
-        {/* Home Team */}
-        <div className="flex justify-between items-center">
-          <label className="font-semibold">{homeTeam}</label>
+      {/* Score */}
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center">
+          <span className="text-sm text-gray-500">{homeTeam}</span>
           <input
-            type="number"
-            min="0"
-            className="border rounded px-3 py-2 w-20 text-center"
+            className="border p-2 w-16 text-center rounded"
             value={homeScore}
-            onChange={(e) => setHomeScore(Number(e.target.value))}
+            onChange={(e) => setHomeScore(e.target.value)}
           />
         </div>
 
-        {/* Away Team */}
-        <div className="flex justify-between items-center">
-          <label className="font-semibold">{awayTeam}</label>
+        <span className="text-2xl font-bold text-gray-500">-</span>
+
+        <div className="flex flex-col items-center">
+          <span className="text-sm text-gray-500">{awayTeam}</span>
           <input
-            type="number"
-            min="0"
-            className="border rounded px-3 py-2 w-20 text-center"
+            className="border p-2 w-16 text-center rounded"
             value={awayScore}
-            onChange={(e) => setAwayScore(Number(e.target.value))}
+            onChange={(e) => setAwayScore(e.target.value)}
           />
         </div>
+      </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          {saving ? "Saving..." : "Save Prediction"}
-        </button>
-      </form>
+      {/* Scorers */}
+      <div className="space-y-2">
+        <div className="text-sm font-semibold">{t("scorers")}</div>
+
+        <div className="flex gap-2">
+          <input
+            className="border p-2 flex-1 rounded"
+            placeholder={t("playerPlaceholder")}
+            value={scorerInput}
+            onChange={(e) => setScorerInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addScorer()}
+          />
+          <Button type="button" onClick={addScorer} variant="primary">
+            {t("add")}
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {scorers.map((s) => (
+            <span
+              key={s}
+              className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex items-center gap-1"
+            >
+              {s}
+              <button
+                type="button"
+                onClick={() => removeScorer(s)}
+                className="text-red-500 font-bold"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Assisters */}
+      <div className="space-y-2">
+        <div className="text-sm font-semibold">{t("assisters")}</div>
+
+        <div className="flex gap-2">
+          <input
+            className="border p-2 flex-1 rounded"
+            placeholder={t("playerPlaceholder")}
+            value={assistInput}
+            onChange={(e) => setAssistInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addAssist()}
+          />
+          <Button type="button" onClick={addAssist} variant="success">
+            {t("add")}
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {assisters.map((a) => (
+            <span
+              key={a}
+              className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full flex items-center gap-1"
+            >
+              {a}
+              <button
+                type="button"
+                onClick={() => removeAssist(a)}
+                className="text-red-500 font-bold"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Double Point */}
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={doublePoint}
+          onChange={(e) => setDoublePoint(e.target.checked)}
+        />
+        {t("doublePoint")}
+      </label>
+
+      <Button
+        onClick={submit}
+        disabled={saving}
+        variant="primary"
+        className="w-full"
+      >
+        {saving ? t("saving") : t("savePrediction")}
+      </Button>
     </div>
   );
 }

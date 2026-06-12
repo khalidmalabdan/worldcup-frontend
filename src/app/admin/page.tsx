@@ -1,5 +1,12 @@
 "use client";
+
 import { useEffect, useState } from "react";
+import { adminApi } from "@/api/admin";
+import PageContainer from "@/components/ui/PageContainer";
+import PageHeader from "@/components/ui/PageHeader";
+import Loading from "@/components/Loading";
+import EmptyState from "@/components/ui/EmptyState";
+import Button from "@/components/ui/Button";
 
 interface ResetLog {
   timestamp: string;
@@ -7,61 +14,99 @@ interface ResetLog {
   message: string;
 }
 
+// Normalize backend logs
+function normalizeLogs(list: any[]): ResetLog[] {
+  return (list ?? []).map((l) => ({
+    timestamp: l.timestamp ?? "",
+    type: l.type ?? "weekly",
+    message: l.message ?? "",
+  }));
+}
+
 export default function AdminDashboard() {
   const [msg, setMsg] = useState("");
   const [logs, setLogs] = useState<ResetLog[]>([]);
-
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("adminToken")
-      : null;
-
-  async function call(endpoint: string) {
-    const res = await fetch(`/api/admin/${endpoint}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const data = await res.json();
-    setMsg(data.message);
-    loadLogs();
-  }
+  const [loading, setLoading] = useState(true);
 
   async function loadLogs() {
-    const res = await fetch(`/api/admin/reset-logs`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const res = await adminApi.get("/reset-logs");
+      setLogs(normalizeLogs(res.data));
+    } catch (err) {
+      console.error("Failed to load logs:", err);
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    const data = await res.json();
-    setLogs(data);
+  async function call(endpoint: string) {
+    try {
+      const res = await adminApi.post(`/${endpoint}`);
+      setMsg(res.data?.message ?? "Action completed");
+      await loadLogs();
+    } catch (err) {
+      console.error("Admin action failed:", err);
+      setMsg("Error performing action");
+    }
   }
 
   useEffect(() => {
     loadLogs();
   }, []);
 
+  if (loading) return <Loading />;
+
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Admin Dashboard</h1>
+    <PageContainer size="md">
+      <PageHeader title="Admin Dashboard" />
 
-      <button onClick={() => call("sync")}>Sync Matches</button>
-      <button onClick={() => call("reset-weekly")}>Reset Weekly</button>
-      <button onClick={() => call("reset-monthly")}>Reset Monthly</button>
+      {/* ACTION BUTTONS */}
+      <div className="flex gap-4">
+        <Button variant="primary" onClick={() => call("sync")}>
+          Sync Matches
+        </Button>
 
-      <p>{msg}</p>
+        <Button variant="success" onClick={() => call("reset-weekly")}>
+          Reset Weekly
+        </Button>
 
-      <h2>Reset Logs</h2>
-      <ul>
-        {logs.map((log, i) => (
-          <li key={i}>
-            <strong>{log.type.toUpperCase()}</strong> — {log.message}
-            <br />
-            <small>{log.timestamp}</small>
-          </li>
-        ))}
-      </ul>
+        <Button variant="warning" onClick={() => call("reset-monthly")}>
+          Reset Monthly
+        </Button>
+      </div>
 
-      <a href="/admin/leagues">View All Leagues →</a>
-    </div>
+      {/* MESSAGE */}
+      {msg && <p className="text-lg font-semibold text-gray-700">{msg}</p>}
+
+      {/* RESET LOGS */}
+      <div>
+        <h2 className="text-xl font-bold mb-3">Reset Logs</h2>
+
+        {logs.length === 0 ? (
+          <EmptyState message="No logs yet." />
+        ) : (
+          <ul className="space-y-3">
+            {logs.map((log, i) => (
+              <li
+                key={i}
+                className="border p-3 rounded bg-white shadow-sm flex flex-col"
+              >
+                <span className="font-semibold uppercase">{log.type}</span>
+                <span>{log.message}</span>
+                <small className="text-gray-500">{log.timestamp}</small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <a
+        href="/admin/leagues"
+        className="inline-block mt-4 text-blue-600 hover:underline"
+      >
+        View All Leagues →
+      </a>
+    </PageContainer>
   );
 }

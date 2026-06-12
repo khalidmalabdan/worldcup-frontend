@@ -1,0 +1,196 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "matches": "المباريات",
+    "groups": "المجموعات",
+    "knockouts": "الأدوار الإقصائية",
+    "leaderboard": "لوحة الصدارة",
+    "profile": "الملف الشخصي",
+    "admin": "الإدارة",
+    "logout": "تسجيل الخروج",
+    "login": "تسجيل الدخول",
+    "language": "اللغة",
+    "predictions": "التوقعات",
+    "standings": "الترتيب",
+    "leagues": "الدوريات",
+    "lightMode": "الوضع الفاتح",
+    "darkMode": "الوضع الداكن"
+  },
+
+  "lang": {
+    "english": "الإنجليزية",
+    "arabic": "العربية"
+  },
+
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ ما.",
+    "noData": "لا توجد بيانات.",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "viewMore": "عرض المزيد"
+  },
+
+  "matches": {
+    "title": "المباريات",
+    "search": "ابحث عن الفرق...",
+    "status": {
+      "live": "مباشر",
+      "upcoming": "قادمة",
+      "finished": "منتهية"
+    },
+    "filters": {
+      "all": "الكل",
+      "today": "اليوم",
+      "tomorrow": "غداً",
+      "week": "هذا الأسبوع"
+    },
+    "vs": "ضد",
+    "loadMore": "تحميل المزيد من المباريات",
+    "noMatches": "لا توجد مباريات مطابقة للبحث."
+  },
+
+  "matchDetails": {
+    "liveLoading": "جاري تحميل المباراة المباشرة...",
+    "fullTime": "نهاية المباراة",
+    "notStarted": "المباراة لم تبدأ بعد",
+    "liveTimeline": "الأحداث المباشرة",
+    "liveMinute": "مباشر",
+    "players": "اللاعبون",
+    "timeline": "أحداث المباراة",
+    "noEvents": "لا توجد أحداث حتى الآن.",
+    "prediction": "توقعك"
+  },
+
+  "prediction": {
+    "title": "توقعك",
+    "playerPlaceholder": "اسم اللاعب",
+    "homeTeam": "الفريق المستضيف",
+    "awayTeam": "الفريق الضيف",
+    "scorers": "الهدافون",
+    "assisters": "صناع اللعب",
+    "add": "إضافة",
+    "doublePoint": "استخدام النقاط المضاعفة لهذه المباراة",
+    "saving": "جاري الحفظ...",
+    "savePrediction": "حفظ التوقع",
+    "errorSaving": "فشل حفظ التوقع. حاول مرة أخرى.",
+    "none": "لا يوجد",
+    "selectedCount": "{count} مختار"
+  },
+
+  "leaderboard": {
+    "title": "لوحة الصدارة",
+    "allTime": "طوال الوقت",
+    "weekly": "الأسبوعي",
+    "monthly": "الشهري",
+    "rank": "الترتيب",
+    "points": "النقاط",
+    "weeklyPoints": "نقاط الأسبوع",
+    "monthlyPoints": "نقاط الشهر",
+    "achievements": "الإنجازات",
+    "mostImproved": "الأكثر تحسناً",
+    "doublePointUsed": "تم استخدام النقاط المضاعفة"
+  },
+
+  "globalLeaderboard": {
+    "title": "الترتيب العالمي",
+    "noData": "لا توجد بيانات للترتيب العالمي."
+  },
+
+  "profile": {
+    "title": "الملف الشخصي",
+    "userId": "معرّف المستخدم",
+    "leagues": "الدوريات",
+    "noLeagues": "لست مشتركاً في أي دوري.",
+    "stats": "الإحصائيات",
+    "totalPoints": "إجمالي النقاط",
+    "exactScores": "النتائج الدقيقة",
+    "correctScorers": "الهدافون الصحيحون",
+    "correctAssists": "صناع اللعب الصحيحون"
+  },
+
+  "league": {
+    "leaderboard": "لوحة الصدارة",
+    "members": "الأعضاء",
+    "trophies": "جوائز الأسبوع",
+    "noTrophies": "لا توجد جوائز حتى الآن."
+  },
+
+  "admin": {
+    "title": "لوحة التحكم",
+    "sync": "مزامنة المباريات",
+    "resetWeekly": "إعادة تعيين الأسبوع",
+    "resetMonthly": "إعادة تعيين الشهر",
+    "resetLogs": "سجل عمليات التصفير",
+    "noLogs": "لا توجد سجلات بعد.",
+    "viewLeagues": "عرض جميع الدوريات →"
+  },
+
+  "standingsPage": {
+  "title": "الترتيب",
+  "group": "المجموعة",
+  "played": "ل",
+  "won": "ف",
+  "draw": "ت",
+  "lost": "خ",
+  "goalsFor": "له",
+  "goalsAgainst": "عليه",
+  "goalDifference": "الفرق",
+  "points": "نقاط",
+  "noStandings": "لا يوجد ترتيب متاح.",
+  "viewGroup": "عرض المجموعة"
+},
+
+"groupsPage": {
+  "title": "المجموعات",
+  "group": "المجموعة",
+  "groupA": "المجموعة A",
+  "groupB": "المجموعة B",
+  "groupC": "المجموعة C",
+  "groupD": "المجموعة D",
+  "groupE": "المجموعة E",
+  "groupF": "المجموعة F",
+  "groupG": "المجموعة G",
+  "groupH": "المجموعة H",
+  "noGroups": "لا توجد مجموعات متاحة.",
+  "viewStandings": "عرض الترتيب",
+  "viewMatches": "عرض المباريات"
+},
+
+"knockoutsPage": {
+  "title": "الأدوار الإقصائية",
+  "roundOf16": "دور الـ 16",
+  "quarterFinals": "ربع النهائي",
+  "semiFinals": "نصف النهائي",
+  "thirdPlace": "مباراة المركز الثالث",
+  "final": "النهائي",
+  "noMatches": "لا توجد مباريات في الأدوار الإقصائية."
+},
+
+"leaguesPage": {
+  "title": "الدوريات",
+  "createLeague": "إنشاء دوري",
+  "joinLeague": "الانضمام إلى دوري",
+  "leagueName": "اسم الدوري",
+  "inviteCode": "رمز الدعوة",
+  "enterInviteCode": "أدخل رمز الدعوة",
+  "members": "الأعضاء",
+  "noLeagues": "لست مشتركاً في أي دوري.",
+  "leaveLeague": "مغادرة الدوري",
+  "confirmLeave": "هل أنت متأكد أنك تريد مغادرة هذا الدوري؟",
+  "createdBy": "أنشئ بواسطة",
+  "yourLeagues": "دورياتك",
+  "settings": "إعدادات الدوري",
+  "saveSettings": "حفظ الإعدادات",
+  "description": "الوصف",
+  "noMembers": "لا يوجد أعضاء في هذا الدوري بعد."
+}
+
+
+
+
+}

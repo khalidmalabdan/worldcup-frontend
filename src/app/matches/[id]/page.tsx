@@ -1,88 +1,97 @@
-"use client"; // match details page
+"use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import api from "@/src/api/client";
-import useSocket from "@/src/hooks/useSocket";
+import api from "@/api/client";
+import { socket } from "@/lib/socket";
 import PredictionForm from "./PredictionForm";
+import Loading from "@/components/Loading";
+import EmptyState from "@/components/ui/EmptyState";
+import PageContainer from "@/components/ui/PageContainer";
+import PageHeader from "@/components/ui/PageHeader";
+import { useTranslations, useLocale } from "next-intl";
 
-type MatchStatus = "upcoming" | "live" | "finished";
+// Normalize backend match shape
+function normalizeMatch(m: any) {
+  return {
+    id: m.id ?? m.matchId,
+    kickoffTime: m.kickoffTime ?? m.kickoff_time ?? m.kickoff ?? 0,
+    status: m.status ?? "upcoming",
 
-interface MatchEvent {
-  minute: number;
-  type: string;
-  scorer?: string;
-  assist?: string;
-  team?: string;
-}
+    score: {
+      home: m.score?.home ?? m.homeScore ?? m.home_score ?? 0,
+      away: m.score?.away ?? m.awayScore ?? m.away_score ?? 0
+    },
 
-interface Match {
-  id: string;
-  homeTeam: string;
-  awayTeam: string;
-  kickoffTime: number;
-  matchDate: string;
-  homeScore: number;
-  awayScore: number;
-  status: MatchStatus;
-  homeFlag?: string;
-  awayFlag?: string;
-  events?: MatchEvent[];
-  group?: string;
-}
+    homeTeam: {
+      name: m.homeTeam?.name ?? m.homeTeam ?? m.home ?? "",
+      logo: m.homeTeam?.logo ?? m.homeLogo ?? null,
+      players: m.homeTeam?.players ?? []
+    },
 
-interface Prediction {
-  homeScore: number;
-  awayScore: number;
+    awayTeam: {
+      name: m.awayTeam?.name ?? m.awayTeam ?? m.away ?? "",
+      logo: m.awayTeam?.logo ?? m.awayLogo ?? null,
+      players: m.awayTeam?.players ?? []
+    },
+
+    events: m.events ?? [],
+    userPrediction: m.userPrediction ?? null,
+    ...m
+  };
 }
 
 export default function MatchDetailsPage() {
+  const t = useTranslations("matchDetails");
+  const locale = useLocale();
+
   const { id } = useParams();
   const router = useRouter();
 
-  const [match, setMatch] = useState<Match | null>(null);
-  const [prediction, setPrediction] = useState<Prediction>({
-    homeScore: 0,
-    awayScore: 0,
-  });
-
+  const [match, setMatch] = useState<any>(null);
+  const [userPrediction, setUserPrediction] = useState<any>(null);
   const [liveMinute, setLiveMinute] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  // Fetch match + prediction
+  /* ---------------------------------------------------
+     ⭐ Load match details + user prediction
+  --------------------------------------------------- */
   useEffect(() => {
-    async function loadData() {
+    async function load() {
       try {
-        const matchRes = await api.get(`/matches/${id}`);
-        const m = matchRes.data.match || matchRes.data;
-        setMatch(m);
+        const res = await api.get(`/matches/${id}`);
+        const normalized = normalizeMatch(res.data);
 
-        const predRes = await api.get(`/matches/${id}/predictions/me`);
-        if (predRes.data) {
-          setPrediction({
-            homeScore: predRes.data.homeScore,
-            awayScore: predRes.data.awayScore,
+        setMatch(normalized);
+
+        if (normalized.userPrediction) {
+          setUserPrediction({
+            homeScore: normalized.userPrediction.homeScore,
+            awayScore: normalized.userPrediction.awayScore
           });
         }
-      } catch {
-        setError("Failed to load match data");
+      } catch (err) {
+        console.error("Failed to load match:", err);
+        setMatch(null);
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+
+    load();
   }, [id]);
 
-  // Live updates
-  useSocket((socket) => {
+  /* ---------------------------------------------------
+     ⭐ Live updates via Socket.IO
+  --------------------------------------------------- */
+  useEffect(() => {
     if (!id) return;
 
     socket.emit("match:subscribe", id);
 
-    socket.on("match:update", (data: Match) => {
-      if (data.id === id) {
-        setMatch((prev) => (prev ? { ...prev, ...data } : data));
+    socket.on("match:update", (payload: any) => {
+      if (payload.id === id) {
+        setMatch((prev: any) => normalizeMatch({ ...prev, ...payload }));
       }
     });
 
@@ -90,43 +99,40 @@ export default function MatchDetailsPage() {
       setLiveMinute(minute);
     });
 
-    socket.on(
-      "match:final",
-      (payload: { match: Match; events: MatchEvent[] }) => {
-        if (payload.match.id === id) {
-          setMatch((prev) =>
-            prev
-              ? { ...prev, ...payload.match, events: payload.events }
-              : { ...payload.match, events: payload.events }
-          );
-        }
+    socket.on("match:final", (payload: any) => {
+      if (payload.match.id === id) {
+        setMatch(normalizeMatch({ ...payload.match, events: payload.events }));
       }
-    );
-  });
+    });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        Loading match...
-      </div>
-    );
-  }
+    return () => {
+      socket.off("match:update");
+      socket.off("match:minute");
+      socket.off("match:final");
+    };
+  }, [id]);
 
-  if (!match) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        Match not found
-      </div>
-    );
-  }
+  /* ---------------------------------------------------
+     ⭐ Loading / Error States
+  --------------------------------------------------- */
+  if (loading) return <Loading />;
 
-  const formattedDate = new Date(match.kickoffTime).toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  if (!match)
+    return <EmptyState message={t("notFound")} />;
+
+  /* ---------------------------------------------------
+     ⭐ Format UI data
+  --------------------------------------------------- */
+  const formattedDate = new Date(match.kickoffTime).toLocaleString(
+    locale === "ar" ? "ar-SA" : "en-US",
+    {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
 
   const statusColor =
     match.status === "live"
@@ -136,7 +142,7 @@ export default function MatchDetailsPage() {
       : "bg-gray-300 text-gray-800";
 
   const sortedEvents = [...(match.events || [])].sort(
-    (a, b) => a.minute - b.minute
+    (a: { minute: number }, b: { minute: number }) => a.minute - b.minute
   );
 
   const getIcon = (type: string) => {
@@ -157,103 +163,126 @@ export default function MatchDetailsPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-10">
+    <PageContainer size="md">
+      <PageHeader title={t("title")} />
 
       {/* HEADER */}
       <div className="text-center space-y-4">
-
-        {/* Teams */}
-        <div className="flex items-center justify-center gap-6">
-
+        <div className="flex items-center justify-center gap-10">
           {/* Home */}
           <div className="flex flex-col items-center">
-            {match.homeFlag && (
+            {match.homeTeam.logo && (
               <img
-                src={match.homeFlag}
-                className="w-14 h-14 rounded shadow-md"
+                src={match.homeTeam.logo}
+                className="w-16 h-16 rounded-full shadow-md"
               />
             )}
-            <span className="text-lg font-semibold">{match.homeTeam}</span>
+            <span className="text-lg font-semibold">{match.homeTeam.name}</span>
           </div>
 
           {/* Score */}
-          <div className="text-4xl font-bold">
-            {match.homeScore} <span className="text-gray-500">-</span>{" "}
-            {match.awayScore}
+          <div className="text-5xl font-bold">
+            {match.score.home} <span className="text-gray-500">-</span>{" "}
+            {match.score.away}
           </div>
 
           {/* Away */}
           <div className="flex flex-col items-center">
-            {match.awayFlag && (
+            {match.awayTeam.logo && (
               <img
-                src={match.awayFlag}
-                className="w-14 h-14 rounded shadow-md"
+                src={match.awayTeam.logo}
+                className="w-16 h-16 rounded-full shadow-md"
               />
             )}
-            <span className="text-lg font-semibold">{match.awayTeam}</span>
+            <span className="text-lg font-semibold">{match.awayTeam.name}</span>
           </div>
         </div>
 
         {/* Meta */}
         <div className="flex items-center justify-center gap-3 text-sm text-gray-600">
           <span>{formattedDate}</span>
-          {match.group && <span>• Group {match.group}</span>}
+
           <span
             className={`px-2 py-1 rounded text-xs font-semibold ${statusColor}`}
           >
-            {match.status.toUpperCase()}
+            {t(`status.${match.status}`)}
           </span>
 
           {match.status === "live" && liveMinute !== null && (
             <span className="text-red-600 font-bold animate-pulse">
-              {liveMinute}’ LIVE
+              {liveMinute}’ {t("live")}
             </span>
           )}
         </div>
       </div>
 
-      {/* PREDICTION FORM (REUSABLE COMPONENT) */}
+      {/* ⭐ TEAM PLAYERS SECTION */}
+      <div className="grid grid-cols-2 gap-6 mt-4">
+        {/* Home players */}
+        <div>
+          <h3 className="font-semibold text-lg mb-2">
+            {match.homeTeam.name} — {t("players")}
+          </h3>
+          <ul className="space-y-1 text-sm text-gray-700">
+            {match.homeTeam.players?.map((p: any, i: number) => (
+              <li key={i}>• {p.name}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Away players */}
+        <div>
+          <h3 className="font-semibold text-lg mb-2">
+            {match.awayTeam.name} — {t("players")}
+          </h3>
+          <ul className="space-y-1 text-sm text-gray-700">
+            {match.awayTeam.players?.map((p: any, i: number) => (
+              <li key={i}>• {p.name}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* PREDICTION FORM */}
       <PredictionForm
         matchId={match.id}
-        homeTeam={match.homeTeam}
-        awayTeam={match.awayTeam}
-        initialHomeScore={prediction.homeScore}
-        initialAwayScore={prediction.awayScore}
-        onSaved={() => router.push("/matches")}
+        homeTeam={match.homeTeam.name}
+        awayTeam={match.awayTeam.name}
+        initialHomeScore={userPrediction?.homeScore ?? 0}
+        initialAwayScore={userPrediction?.awayScore ?? 0}
+        onSaved={() => router.refresh()}
       />
 
       {/* TIMELINE */}
       <div>
-        <h2 className="text-xl font-semibold mb-3">Match Timeline</h2>
+        <h2 className="text-xl font-semibold mb-3">{t("timeline")}</h2>
 
         {sortedEvents.length === 0 && (
-          <p className="text-gray-500 text-sm">No events yet.</p>
+          <p className="text-gray-500 text-sm">{t("noEvents")}</p>
         )}
 
         <div className="relative border-l-2 border-gray-300 ml-6 space-y-6">
-          {sortedEvents.map((ev, idx) => (
+          {sortedEvents.map((ev: any, idx: number) => (
             <div key={idx} className="relative pl-6">
-
-              {/* Dot */}
               <div className="absolute -left-3 top-1 w-6 h-6 bg-white border-2 border-blue-500 rounded-full flex items-center justify-center text-xs shadow-sm">
                 {getIcon(ev.type)}
               </div>
 
               <div className="text-sm font-semibold">
-                {ev.minute}’ — {ev.scorer || "Unknown"}
+                {ev.minute}’ — {ev.scorer || t("unknown")}
                 {ev.team && (
                   <span className="text-gray-500"> ({ev.team})</span>
                 )}
               </div>
 
               <div className="text-xs text-gray-500">
-                {ev.type}
-                {ev.assist && ` • Assist: ${ev.assist}`}
+                {t(`event.${ev.type}`)}
+                {ev.assist && ` • ${t("assist")}: ${ev.assist}`}
               </div>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

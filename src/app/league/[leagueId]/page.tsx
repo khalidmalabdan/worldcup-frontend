@@ -1,81 +1,121 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import api from "@/src/api/client";
+import api from "@/api/client";
 
-interface Member {
-  id: string;
-  name: string;
-  points: number;
+import PageContainer from "@/components/ui/PageContainer";
+import PageHeader from "@/components/ui/PageHeader";
+import Loading from "@/components/Loading";
+import EmptyState from "@/components/ui/EmptyState";
+
+import LeagueHeader from "@/components/league/LeagueHeader";
+import LeagueMembers from "@/components/league/LeagueMembers";
+import LeagueLeaderboard from "@/components/league/LeagueLeaderboard";
+import LeagueTrophies from "@/components/league/LeagueTrophies";
+
+// Normalize backend league shape
+function normalizeLeague(l: any) {
+  return {
+    id: l.id,
+    name: l.name ?? "League",
+    description: l.description ?? "",
+    ownerId: l.ownerId ?? null,
+    createdAt: l.createdAt ?? null,
+    ...l,
+  };
 }
 
-interface League {
-  id: string;
-  name: string;
+function normalizeMembers(list: any[]) {
+  return list.map((m) => ({
+    userId: m.userId,
+    name: m.name ?? "Unknown",
+    avatar: m.avatar ?? null,
+    rank: m.rank ?? "-",
+    points: m.points ?? 0,
+    ...m,
+  }));
 }
 
-export default function LeaguePage() {
-  const { id } = useParams();
+function normalizeLeaderboard(list: any[]) {
+  return list.map((m) => ({
+    userId: m.userId,
+    name: m.name ?? "Unknown",
+    points: m.points ?? 0,
+    rank: m.rank ?? "-",
+    ...m,
+  }));
+}
 
-  const [league, setLeague] = useState<League | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
+function normalizeTrophies(list: any[]) {
+  return list ?? [];
+}
+
+export default function LeaguePage({
+  params,
+}: {
+  params: { leagueId: string };
+}) {
+  const leagueId = params.leagueId;
+
+  const [league, setLeague] = useState<any>(null);
+  const [members, setMembers] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [trophies, setTrophies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadLeague() {
+    async function load() {
       try {
-        const res = await api.get(`/leagues/${id}`);
-        setLeague(res.data.league || res.data);
+        const [l, m, lb, t] = await Promise.all([
+          api.get(`/leagues/${leagueId}`),
+          api.get(`/leagues/${leagueId}/members`),
+          api.get(`/leagues/${leagueId}/leaderboard`),
+          api.get(`/leagues/${leagueId}/trophies`),
+        ]);
 
-        const membersRes = await api.get(`/leagues/${id}/leaderboard`);
-        setMembers(membersRes.data.members || membersRes.data);
+        setLeague(normalizeLeague(l.data));
+        setMembers(normalizeMembers(m.data.members ?? m.data));
+        setLeaderboard(normalizeLeaderboard(lb.data.members ?? lb.data));
+        setTrophies(normalizeTrophies(t.data.trophies ?? t.data));
       } catch (err) {
-        setError("Failed to load league");
+        console.error("Failed to load league:", err);
+        setLeague(null);
       } finally {
         setLoading(false);
       }
     }
 
-    loadLeague();
-  }, [id]);
+    load();
+  }, [leagueId]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        Loading league...
-      </div>
-    );
-  }
+  if (loading) return <Loading />;
 
-  if (!league) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        League not found
-      </div>
-    );
-  }
+  if (!league)
+    return <EmptyState message="Failed to load league data." />;
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">{league.name}</h1>
+    <PageContainer size="md">
+      <PageHeader title={league.name} />
 
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {/* League Header */}
+      <LeagueHeader league={league} />
 
-      <div className="space-y-3">
-        {members.map((m, index) => (
-          <div
-            key={m.id}
-            className="border rounded p-4 flex justify-between items-center"
-          >
-            <span className="font-semibold">
-              {index + 1}. {m.name}
-            </span>
-            <span className="text-blue-600 font-bold">{m.points} pts</span>
-          </div>
-        ))}
-      </div>
-    </div>
+      {/* Leaderboard */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-3">Leaderboard</h2>
+        <LeagueLeaderboard leaderboard={leaderboard} />
+      </section>
+
+      {/* Members */}
+      <section className="mt-10">
+        <h2 className="text-xl font-semibold mb-3">Members</h2>
+        <LeagueMembers members={members} />
+      </section>
+
+      {/* Weekly Trophies */}
+      <section className="mt-10">
+        <LeagueTrophies trophies={trophies} />
+      </section>
+    </PageContainer>
   );
 }

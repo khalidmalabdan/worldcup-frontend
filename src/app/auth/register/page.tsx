@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { register } from "@/src/services/auth";
 import { useRouter } from "next/navigation";
+import api, { setAuthToken } from "@/api/client";
+import PageContainer from "@/components/ui/PageContainer";
+import PageHeader from "@/components/ui/PageHeader";
+import Button from "@/components/ui/Button";
+import ErrorMessage from "@/components/ui/Error";
 
 export default function RegisterPage() {
   const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,71 +21,78 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const res = await register(name, email, password);
-      localStorage.setItem("token", res.token);
+      const res = await api.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      const token = res.data.token;
+      localStorage.setItem("token", token);
+      setAuthToken(token);
+
       router.push("/");
     } catch (err) {
-      setError("Registration failed");
+      setError("Registration failed. Please try again.");
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm border rounded p-6 space-y-4"
-      >
-        <h1 className="text-2xl font-bold text-center">Register</h1>
-
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-        <div>
-          <label className="block text-sm mb-1">Name</label>
-          <input
-            type="text"
-            className="border rounded w-full px-3 py-2"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1">Email</label>
-          <input
-            type="email"
-            className="border rounded w-full px-3 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1">Password</label>
-          <input
-            type="password"
-            className="border rounded w-full px-3 py-2"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+    <PageContainer size="sm">
+      <div className="min-h-screen flex items-center justify-center">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-sm bg-white border rounded p-6 shadow space-y-4"
         >
-          Create account
-        </button>
+          <PageHeader title="Create Account" />
 
-        <p className="text-sm text-center">
-          Already have an account?{" "}
-          <a href="/auth/login" className="text-blue-600 underline">
-            Login
-          </a>
-        </p>
-      </form>
-    </div>
+          {error && <ErrorMessage message={error} />}
+
+          <div>
+            <label className="block text-sm mb-1">Name</label>
+            <input
+              type="text"
+              className="border rounded w-full px-3 py-2"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">Email</label>
+            <input
+              type="email"
+              className="border rounded w-full px-3 py-2"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">Password</label>
+            <input
+              type="password"
+              className="border rounded w-full px-3 py-2"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <Button type="submit" variant="success" className="w-full">
+            Create Account
+          </Button>
+
+          <p className="text-sm text-center">
+            Already have an account?{" "}
+            <a href="/auth/login" className="text-blue-600 underline">
+              Login
+            </a>
+          </p>
+        </form>
+      </div>
+    </PageContainer>
   );
 }

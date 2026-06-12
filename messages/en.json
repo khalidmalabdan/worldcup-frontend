@@ -1,0 +1,196 @@
+{
+  "nav": {
+    "home": "Home",
+    "matches": "Matches",
+    "groups": "Groups",
+    "knockouts": "Knockouts",
+    "standings": "Standings",
+    "leaderboard": "Leaderboard",
+    "profile": "Profile",
+    "admin": "Admin",
+    "logout": "Logout",
+    "login": "Login",
+    "language": "Language",
+    "predictions": "Predictions",
+    "leagues": "Leagues",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode"
+  },
+
+  "lang": {
+    "english": "English",
+    "arabic": "Arabic"
+  },
+
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "noData": "No data available.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "back": "Back",
+    "viewMore": "View More"
+  },
+
+  "matches": {
+    "title": "Matches",
+    "search": "Search teams...",
+    "status": {
+      "live": "Live",
+      "upcoming": "Upcoming",
+      "finished": "Finished"
+    },
+    "filters": {
+      "all": "All",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "week": "This Week"
+    },
+    "vs": "vs",
+    "loadMore": "Load more matches",
+    "noMatches": "No matches found for these filters."
+  },
+
+  "matchDetails": {
+    "liveMinute": "LIVE",
+    "players": "Players",
+    "timeline": "Match Timeline",
+    "noEvents": "No events yet.",
+    "prediction": "Your Prediction",
+    "liveLoading": "Loading live match...",
+    "fullTime": "Full time",
+    "notStarted": "Match has not started",
+    "liveTimeline": "Live Timeline"
+  },
+
+  "prediction": {
+    "title": "Your Prediction",
+    "playerPlaceholder": "Player name",
+    "homeTeam": "Home Team",
+    "awayTeam": "Away Team",
+    "scorers": "Scorers",
+    "assisters": "Assisters",
+    "add": "Add",
+    "doublePoint": "Use Double Point for this match",
+    "saving": "Saving...",
+    "savePrediction": "Save Prediction",
+    "errorSaving": "Failed to save prediction. Please try again.",
+    "none": "None",
+    "selectedCount": "{count} selected"
+  },
+
+  "leaderboard": {
+    "title": "Leaderboard",
+    "allTime": "All‑Time",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "rank": "Rank",
+    "points": "Points",
+    "weeklyPoints": "Weekly Points",
+    "monthlyPoints": "Monthly Points",
+    "achievements": "Achievements",
+    "mostImproved": "Most Improved",
+    "doublePointUsed": "Double Point Used"
+  },
+
+  "globalLeaderboard": {
+    "title": "Global Leaderboard",
+    "noData": "No leaderboard data available."
+  },
+
+  "profile": {
+    "title": "Your Profile",
+    "userId": "User ID",
+    "leagues": "Leagues",
+    "noLeagues": "Not in any leagues.",
+    "stats": "Stats",
+    "totalPoints": "Total Points",
+    "exactScores": "Exact Scores",
+    "correctScorers": "Correct Scorers",
+    "correctAssists": "Correct Assists"
+  },
+
+  "league": {
+    "leaderboard": "Leaderboard",
+    "members": "Members",
+    "trophies": "Weekly Trophies",
+    "noTrophies": "No trophies yet."
+  },
+
+  "admin": {
+    "title": "Admin Dashboard",
+    "sync": "Sync Matches",
+    "resetWeekly": "Reset Weekly",
+    "resetMonthly": "Reset Monthly",
+    "resetLogs": "Reset Logs",
+    "noLogs": "No logs yet.",
+    "viewLeagues": "View All Leagues →"
+  },
+
+  "standingsPage": {
+  "title": "Standings",
+  "group": "Group",
+  "played": "P",
+  "won": "W",
+  "draw": "D",
+  "lost": "L",
+  "goalsFor": "GF",
+  "goalsAgainst": "GA",
+  "goalDifference": "GD",
+  "points": "PTS",
+  "noStandings": "No standings available.",
+  "viewGroup": "View Group"
+},
+
+"groupsPage": {
+  "title": "Groups",
+  "group": "Group",
+  "groupA": "Group A",
+  "groupB": "Group B",
+  "groupC": "Group C",
+  "groupD": "Group D",
+  "groupE": "Group E",
+  "groupF": "Group F",
+  "groupG": "Group G",
+  "groupH": "Group H",
+  "noGroups": "No groups available.",
+  "viewStandings": "View Standings",
+  "viewMatches": "View Matches"
+},
+
+"knockoutsPage": {
+  "title": "Knockouts",
+  "roundOf16": "Round of 16",
+  "quarterFinals": "Quarter-finals",
+  "semiFinals": "Semi-finals",
+  "thirdPlace": "Third Place Match",
+  "final": "Final",
+  "noMatches": "No knockout matches available."
+},
+
+"leaguesPage": {
+  "title": "Leagues",
+  "createLeague": "Create League",
+  "joinLeague": "Join League",
+  "leagueName": "League Name",
+  "inviteCode": "Invite Code",
+  "enterInviteCode": "Enter invite code",
+  "members": "Members",
+  "noLeagues": "You are not part of any leagues.",
+  "leaveLeague": "Leave League",
+  "confirmLeave": "Are you sure you want to leave this league?",
+  "createdBy": "Created by",
+  "yourLeagues": "Your Leagues",
+  "settings": "League Settings",
+  "saveSettings": "Save Settings",
+  "description": "Description",
+  "noMembers": "No members in this league yet."
+}
+
+
+
+
+}

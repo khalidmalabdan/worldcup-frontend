@@ -1,5 +1,7 @@
 "use client";
+
 import { useEffect, useState } from "react";
+import api from "@/api/client";
 
 interface LeagueMember {
   userId: string;
@@ -14,38 +16,74 @@ interface League {
   members: LeagueMember[];
 }
 
-export default function LeagueMembers({ params }: any) {
+export default function AdminLeagueDetails({ params }: { params: { id: string } }) {
   const { id } = params;
 
   const [league, setLeague] = useState<League | null>(null);
-
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("adminToken")
-      : null;
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/leagues/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setLeague(data));
+    async function load() {
+      try {
+        const res = await api.get(`/leagues/${id}`);
+        setLeague(res.data);
+      } catch (err) {
+        console.error("Failed to load league:", err);
+        setLeague(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
   }, [id]);
 
-  if (!league) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading league...
+      </div>
+    );
+  }
+
+  if (!league) {
+    return (
+      <div className="p-6 text-center text-red-500">
+        Failed to load league.
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>{league.name}</h1>
+    <div className="max-w-3xl mx-auto p-8 space-y-6">
+      <h1 className="text-3xl font-bold">{league.name}</h1>
 
-      <h2>Members</h2>
-      <ul>
-        {league.members.map((m) => (
-          <li key={m.userId}>
-            {m.name} — {m.points} pts (Rank {m.rank ?? "—"})
-          </li>
-        ))}
-      </ul>
+      <h2 className="text-xl font-semibold">Members</h2>
+
+      {league.members.length === 0 ? (
+        <p className="text-gray-500">No members found.</p>
+      ) : (
+        <ul className="space-y-2">
+          {league.members.map((m) => (
+            <li
+              key={m.userId}
+              className="border p-3 rounded bg-white shadow-sm flex justify-between"
+            >
+              <span>{m.name}</span>
+              <span className="text-sm text-gray-700">
+                {m.points} pts • Rank {m.rank ?? "—"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <a
+        href="/admin/leagues"
+        className="inline-block mt-4 text-blue-600 hover:underline"
+      >
+        ← Back to all leagues
+      </a>
     </div>
   );
 }

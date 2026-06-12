@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import api from "@/src/api/client";
-import useSocket from "@/src/hooks/useSocket";
+import api from "@/api/client";
+import useSocket from "@/hooks/useSocket";
+import { useTranslations } from "next-intl";
 
 interface MatchEvent {
   minute: number;
   type: string;
   scorer?: string;
   assist?: string;
-  team?: string;
+  team?: string; // "home" | "away"
 }
 
 interface Match {
@@ -28,6 +29,7 @@ interface Match {
 
 export default function LiveMatchTracker() {
   const { id } = useParams();
+  const t = useTranslations("matchDetails");
 
   const [match, setMatch] = useState<Match | null>(null);
   const [liveMinute, setLiveMinute] = useState<number | null>(null);
@@ -69,7 +71,7 @@ export default function LiveMatchTracker() {
         if (payload.match.id === id) {
           setMatch({
             ...payload.match,
-            events: payload.events,
+            events: payload.events
           });
         }
       }
@@ -79,7 +81,7 @@ export default function LiveMatchTracker() {
   if (loading || !match) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-500">
-        Loading live match...
+        {t("liveLoading")}
       </div>
     );
   }
@@ -88,32 +90,21 @@ export default function LiveMatchTracker() {
     (a, b) => a.minute - b.minute
   );
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "goal":
-        return "⚽";
-      case "assist":
-        return "🎯";
-      case "yellow":
-        return "🟨";
-      case "red":
-        return "🟥";
-      case "sub":
-        return "🔄";
-      default:
-        return "•";
-    }
+  const ICONS: Record<string, string> = {
+    goal: "⚽",
+    assist: "🎯",
+    yellow: "🟨",
+    red: "🟥",
+    sub: "🔁",
+    chance: "🔥"
   };
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-10">
-
       {/* HEADER */}
       <div className="text-center space-y-4">
-
         {/* Teams */}
         <div className="flex items-center justify-center gap-6">
-
           {/* Home */}
           <div className="flex flex-col items-center">
             {match.homeFlag && (
@@ -143,56 +134,78 @@ export default function LiveMatchTracker() {
           </div>
         </div>
 
-        {/* Live minute */}
+        {/* Live minute / status */}
         {match.status === "live" && (
           <div className="text-red-600 font-bold text-lg animate-pulse">
-            {liveMinute !== null ? `${liveMinute}’ LIVE` : "LIVE"}
+            {liveMinute !== null ? `${liveMinute}’ ${t("live")}` : t("live")}
           </div>
         )}
 
         {match.status === "finished" && (
           <div className="text-green-600 font-bold text-lg">
-            FULL TIME
+            {t("fullTime")}
           </div>
         )}
 
         {match.status === "upcoming" && (
           <div className="text-gray-600 font-semibold">
-            Match has not started
+            {t("notStarted")}
           </div>
         )}
       </div>
 
-      {/* TIMELINE */}
+      {/* SPLIT TIMELINE */}
       <div>
-        <h2 className="text-xl font-semibold mb-3">Live Timeline</h2>
+        <h2 className="text-xl font-semibold mb-3">{t("liveTimeline")}</h2>
 
         {sortedEvents.length === 0 && (
-          <p className="text-gray-500 text-sm">No events yet.</p>
+          <p className="text-gray-500 text-sm">{t("noEvents")}</p>
         )}
 
-        <div className="relative border-l-2 border-gray-300 ml-6 space-y-6">
-          {sortedEvents.map((ev, idx) => (
-            <div key={idx} className="relative pl-6 animate-fade-in">
+        <div className="relative mt-6">
+          {/* Center vertical line */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-300 -translate-x-1/2" />
 
-              {/* Dot */}
-              <div className="absolute -left-3 top-1 w-6 h-6 bg-white border-2 border-blue-500 rounded-full flex items-center justify-center text-xs shadow-sm">
-                {getIcon(ev.type)}
-              </div>
+          <div className="space-y-8">
+            {sortedEvents.map((ev, idx) => {
+              const icon = ICONS[ev.type] || "•";
+              const isHome = ev.team === "home";
 
-              <div className="text-sm font-semibold">
-                {ev.minute}’ — {ev.scorer || "Unknown"}
-                {ev.team && (
-                  <span className="text-gray-500"> ({ev.team})</span>
-                )}
-              </div>
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-center ${
+                    isHome ? "justify-start" : "justify-end"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[60%] p-3 rounded-lg shadow border ${
+                      isHome
+                        ? "bg-blue-50 border-blue-200"
+                        : "bg-red-50 border-red-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{icon}</span>
+                      <span className="font-semibold">
+                        {ev.scorer || t("unknown")}
+                      </span>
+                    </div>
 
-              <div className="text-xs text-gray-500">
-                {ev.type}
-                {ev.assist && ` • Assist: ${ev.assist}`}
-              </div>
-            </div>
-          ))}
+                    {ev.assist && (
+                      <p className="text-gray-600 text-sm mt-1">
+                        {t("assist")}: {ev.assist}
+                      </p>
+                    )}
+
+                    <p className="text-gray-400 text-xs mt-1">
+                      {ev.minute}’
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

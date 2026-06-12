@@ -1,44 +1,63 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import api from "@/api/client";
+import MatchCard from "@/components/MatchCard";
+import Loading from "@/components/Loading";
+import EmptyState from "@/components/ui/EmptyState";
+import PageContainer from "@/components/ui/PageContainer";
+import PageHeader from "@/components/ui/PageHeader";
+
+// Normalize backend match shape
+function normalizeMatch(m: any) {
+  return {
+    id: m.id ?? m.matchId,
+    homeTeam: m.homeTeam ?? m.home,
+    awayTeam: m.awayTeam ?? m.away,
+    homeScore: m.homeScore ?? m.home_score ?? null,
+    awayScore: m.awayScore ?? m.away_score ?? null,
+    status: m.status ?? "upcoming",
+    group: m.group ?? null,
+    ...m,
+  };
+}
+
 export default function HomePage() {
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.get("/matches/today");
+        const raw = res.data.matches || res.data;
+        setMatches(raw.map(normalizeMatch));
+      } catch (err) {
+        console.error("Failed to load today's matches:", err);
+        setMatches([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (loading) return <Loading />;
+
   return (
-    <div className="flex flex-col items-center text-center py-16">
-      <h1 className="text-4xl font-bold mb-4 text-gray-900">
-        World Cup Fantasy
-      </h1>
+    <PageContainer size="md">
+      <PageHeader title="Today’s Matches" />
 
-      <p className="text-lg text-gray-600 max-w-xl mb-10">
-        Track matches, make predictions, compete in leagues, and climb the
-        leaderboards. Your football journey starts here.
-      </p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-        <a
-          href="/matches"
-          className="px-8 py-4 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
-        >
-          View Matches
-        </a>
-
-        <a
-          href="/predictions"
-          className="px-8 py-4 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
-        >
-          Make Predictions
-        </a>
-
-        <a
-          href="/leagues"
-          className="px-8 py-4 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition"
-        >
-          Join a League
-        </a>
-
-        <a
-          href="/leaderboard"
-          className="px-8 py-4 bg-yellow-500 text-white rounded-lg shadow hover:bg-yellow-600 transition"
-        >
-          Leaderboards
-        </a>
-      </div>
-    </div>
+      {matches.length === 0 ? (
+        <EmptyState message="No matches scheduled for today." />
+      ) : (
+        <div className="space-y-6">
+          {matches.map((match) => (
+            <MatchCard key={match.id} match={match} />
+          ))}
+        </div>
+      )}
+    </PageContainer>
   );
 }
