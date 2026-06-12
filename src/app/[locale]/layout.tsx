@@ -1,17 +1,18 @@
 import type { ReactNode } from "react";
 import { setRequestLocale } from "next-intl/server";
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
-  setRequestLocale(params.locale);
+  const { locale } = await params;
+  setRequestLocale(locale);
 
   return (
-    <html lang={params.locale}>
+    <html lang={locale}>
       <body>{children}</body>
     </html>
   );
