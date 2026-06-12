@@ -25,6 +25,7 @@ function normalizeMatch(m: any) {
 export default function HomePage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -32,8 +33,12 @@ export default function HomePage() {
         const res = await api.get("/matches/day/today");
         const raw = res.data.matches || res.data;
         setMatches(raw.map(normalizeMatch));
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load today's matches:", err);
+        setError(
+          err?.response?.data?.message || err?.message ||
+            "Could not load today’s matches."
+        );
         setMatches([]);
       } finally {
         setLoading(false);
@@ -47,9 +52,11 @@ export default function HomePage() {
 
   return (
     <PageContainer size="md">
-      <PageHeader title="Today’s Matches" />
+      <PageHeader title="Today's Matches" />
 
-      {matches.length === 0 ? (
+      {error ? (
+        <EmptyState message={error} />
+      ) : matches.length === 0 ? (
         <EmptyState message="No matches scheduled for today." />
       ) : (
         <div className="space-y-6">
