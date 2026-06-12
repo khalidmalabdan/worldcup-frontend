@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { io as clientIo } from "socket.io-client";
-import { getLeagueLeaderboard } from "@/src/lib/api/leagues";
+import { getLeagueLeaderboard } from "@/lib/api/leagues";
 
 const socket = clientIo(process.env.NEXT_PUBLIC_API_URL as string, {
   transports: ["websocket"],

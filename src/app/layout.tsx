@@ -1,9 +1,14 @@
-import type {ReactNode} from "react";
+import type { ReactNode } from "react";
 
-interface RootLayoutProps {
-  children: ReactNode;
-}
+export const metadata = {
+  title: "World Cup App",
+  description: "Live matches, predictions, leaderboards",
+};
 
-export default function RootLayout({children}: RootLayoutProps) {
-  return children;
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
 }

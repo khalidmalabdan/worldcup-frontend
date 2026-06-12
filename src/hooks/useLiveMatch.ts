@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { socket } from "@/src/lib/socket";
+import { socket } from "@/lib/socket";
 
 export function useLiveMatch(matchId: string | null) {
   const [minute, setMinute] = useState<number | null>(null);
