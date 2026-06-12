@@ -29,7 +29,7 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get("/matches/today");
+        const res = await api.get("/matches/day/today");
         const raw = res.data.matches || res.data;
         setMatches(raw.map(normalizeMatch));
       } catch (err) {
