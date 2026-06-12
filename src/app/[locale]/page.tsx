@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
 import api from "@/api/client";
 import MatchCard from "@/components/MatchCard";
 import Loading from "@/components/Loading";
@@ -24,7 +23,6 @@ function normalizeMatch(m: any) {
 }
 
 export default function HomePage() {
-  const t = useTranslations('nav');
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +47,7 @@ export default function HomePage() {
 
   return (
     <PageContainer size="md">
-      <PageHeader title={t('matches')} />
+      <PageHeader title="Today's Matches" />
 
       {matches.length === 0 ? (
         <EmptyState message="No matches scheduled for today." />
