@@ -6,6 +6,7 @@ import Loading from "@/components/Loading";
 import EmptyState from "@/components/ui/EmptyState";
 import PageContainer from "@/components/ui/PageContainer";
 import PageHeader from "@/components/ui/PageHeader";
+import DevErrorBoundary from "@/components/DevErrorBoundary";
 
 // Normalize backend match shape
 function normalizeMatch(m: any) {
@@ -162,31 +163,38 @@ export default function HomePage() {
     }
   }, [isClient]);
 
-  if (loading) return <Loading />;
+  if (loading)
+    return (
+      <DevErrorBoundary>
+        <Loading />
+      </DevErrorBoundary>
+    );
 
   return (
-    <PageContainer size="md">
-      <PageHeader title="Today's Matches" />
+    <DevErrorBoundary>
+      <PageContainer size="md">
+        <PageHeader title="Today's Matches" />
 
-      {error ? (
-        <EmptyState message={error} />
-      ) : matches.length === 0 ? (
-        // temporary: render raw JSON to avoid child component crashes while debugging
-        <div className="prose">
-          <EmptyState message="No matches scheduled for today." />
-          <h3 className="mt-4">Raw matches (debug)</h3>
-          <pre className="whitespace-pre-wrap break-words bg-gray-50 p-3 rounded">
-            {JSON.stringify(matches, null, 2)}
-          </pre>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* TEMPORARY: render JSON instead of MatchCard while debugging */}
-          <pre className="whitespace-pre-wrap break-words">
-            {JSON.stringify(matches, null, 2)}
-          </pre>
-        </div>
-      )}
-    </PageContainer>
+        {error ? (
+          <EmptyState message={error} />
+        ) : matches.length === 0 ? (
+          // temporary: render raw JSON to avoid child component crashes while debugging
+          <div className="prose">
+            <EmptyState message="No matches scheduled for today." />
+            <h3 className="mt-4">Raw matches (debug)</h3>
+            <pre className="whitespace-pre-wrap break-words bg-gray-50 p-3 rounded">
+              {JSON.stringify(matches, null, 2)}
+            </pre>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* TEMPORARY: render JSON instead of MatchCard while debugging */}
+            <pre className="whitespace-pre-wrap break-words">
+              {JSON.stringify(matches, null, 2)}
+            </pre>
+          </div>
+        )}
+      </PageContainer>
+    </DevErrorBoundary>
   );
 }
