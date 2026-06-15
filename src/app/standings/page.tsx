@@ -1,7 +1,7 @@
 "use client";
 
 import { useApi } from "@/lib/useApi";
-import api from "@/api/client";
+import api from "@/lib/client";
 
 export default function Standings() {
   const { data, loading } = useApi(

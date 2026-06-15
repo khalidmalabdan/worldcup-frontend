@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import api from "@/api/client";
+import api from "@/lib/client";
 import { GROUPS, getGroupForMatch } from "@/utils/groups";
 import {
   generateKnockoutBracket,

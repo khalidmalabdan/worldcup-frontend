@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import api from "@/api/client";
+import api from "@/lib/client";
 import Button from "@/components/ui/Button";
 import ErrorMessage from "@/components/ui/Error";
 import { useTranslations } from "next-intl";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import api from "@/api/client";
+import api from "@/lib/client";
 import { socket } from "@/lib/socket";
 import PredictionForm from "./PredictionForm";
 import Loading from "@/components/Loading";

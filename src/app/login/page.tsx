@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import api, { setAuthToken } from "@/api/client";
+import api, { setAuthToken } from "@/lib/client";
 import { useRouter } from "next/navigation";
 import PageContainer from "@/components/ui/PageContainer";
 import PageHeader from "@/components/ui/PageHeader";

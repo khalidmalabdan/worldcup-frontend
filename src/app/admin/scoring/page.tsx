@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/api/client";
+import api from "@/lib/client";
 import { adminApi } from "@/api/admin";
 import OverrideModal from "./OverrideModal";
 

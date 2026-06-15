@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import api, { setAuthToken } from "@/api/client";
+import api, { setAuthToken } from "@/lib/client";
 import PageContainer from "@/components/ui/PageContainer";
 import PageHeader from "@/components/ui/PageHeader";
 import Button from "@/components/ui/Button";

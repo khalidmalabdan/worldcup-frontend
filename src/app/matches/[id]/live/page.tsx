@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import api from "@/api/client";
+import api from "@/lib/client";
 import useSocket from "@/hooks/useSocket";
 import { useTranslations } from "next-intl";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/api/client";
+import api from "@/lib/client";
 import MatchCard from "@/components/MatchCard";
 import Loading from "@/components/Loading";
 import EmptyState from "@/components/ui/EmptyState";

@@ -1,12 +1,11 @@
 import axios from "axios";
 
+// Base URL must come from NEXT_PUBLIC_API_URL
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://alabdan-world-cup-competition-26.onrender.com",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
-// 🔥 Automatically attach token (user or admin)
+// Attach token automatically
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token =
@@ -20,7 +19,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 🔥 Global error handling
+// Global error handling
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -33,7 +32,6 @@ api.interceptors.response.use(
 
     if (status === 401) {
       alert("Session expired. Please log in again.");
-
       if (typeof window !== "undefined") {
         localStorage.removeItem("token");
         localStorage.removeItem("adminToken");

@@ -1,4 +1,4 @@
-import api from "./client";
+import api from "../lib/client";
 
 export const adminApi = {
   get: (url: string) =>
