@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import api, { setAuthToken } from "@/lib/client";
+import { useLocale } from "next-intl";
+import api from "@/lib/client";
 import PageContainer from "@/components/ui/PageContainer";
 import PageHeader from "@/components/ui/PageHeader";
 import Button from "@/components/ui/Button";
@@ -10,6 +11,7 @@ import ErrorMessage from "@/components/ui/Error";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const locale = useLocale();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,13 +29,26 @@ export default function RegisterPage() {
         password,
       });
 
-      const token = res.data.token;
-      localStorage.setItem("token", token);
-      setAuthToken(token);
+      // Backend returns accessToken or token depending on version
+      const token =
+        res.data?.accessToken ||
+        res.data?.token ||
+        res.data?.jwt ||
+        null;
 
-      router.push("/");
-    } catch (err) {
-      setError("Registration failed. Please try again.");
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
+      // Redirect to localized login page
+      router.push(`/${locale}/auth/login`);
+    } catch (err: any) {
+      console.error("Registration failed:", err);
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Registration failed. Please try again."
+      );
     }
   }
 
@@ -87,7 +102,10 @@ export default function RegisterPage() {
 
           <p className="text-sm text-center">
             Already have an account?{" "}
-            <a href="/auth/login" className="text-blue-600 underline">
+            <a
+              href={`/${locale}/auth/login`}
+              className="text-blue-600 underline"
+            >
               Login
             </a>
           </p>

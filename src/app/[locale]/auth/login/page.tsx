@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import api, { setAuthToken } from "@/lib/client";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import api from "@/lib/client";
 import PageContainer from "@/components/ui/PageContainer";
 import PageHeader from "@/components/ui/PageHeader";
 import Button from "@/components/ui/Button";
@@ -10,6 +11,7 @@ import ErrorMessage from "@/components/ui/Error";
 
 export default function LoginPage() {
   const router = useRouter();
+  const locale = useLocale();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,59 +22,78 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await api.post("/auth/login", { email, password });
-      const token = res.data.token;
+      const res = await api.post("/auth/login", {
+        email,
+        password,
+      });
 
-      localStorage.setItem("token", token);
-      setAuthToken(token);
+      // Normalize token field from backend
+      const token =
+        res.data?.accessToken ||
+        res.data?.token ||
+        res.data?.jwt ||
+        null;
 
-      router.push("/matches");
-    } catch (err) {
-      setError("Invalid email or password");
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
+      // Redirect to localized home page
+      router.push(`/${locale}`);
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Login failed. Please try again."
+      );
     }
   }
 
   return (
     <PageContainer size="sm">
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen flex items-center justify-center">
         <form
           onSubmit={handleSubmit}
-          className="bg-white p-8 rounded shadow-md w-full max-w-sm"
+          className="w-full max-w-sm bg-white border rounded p-6 shadow space-y-4"
         >
           <PageHeader title="Login" />
 
           {error && <ErrorMessage message={error} />}
 
-          <label className="block mb-4">
-            <span className="text-gray-700">Email</span>
+          <div>
+            <label className="block text-sm mb-1">Email</label>
             <input
               type="email"
-              className="mt-1 w-full border rounded px-3 py-2"
+              className="border rounded w-full px-3 py-2"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-          </label>
+          </div>
 
-          <label className="block mb-6">
-            <span className="text-gray-700">Password</span>
+          <div>
+            <label className="block text-sm mb-1">Password</label>
             <input
               type="password"
-              className="mt-1 w-full border rounded px-3 py-2"
+              className="border rounded w-full px-3 py-2"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </label>
+          </div>
 
           <Button type="submit" variant="primary" className="w-full">
             Login
           </Button>
 
-          <p className="text-center text-sm mt-4">
+          <p className="text-sm text-center">
             Don’t have an account?{" "}
-            <a href="/signup" className="text-blue-600 underline">
-              Sign up
+            <a
+              href={`/${locale}/auth/register`}
+              className="text-blue-600 underline"
+            >
+              Register
             </a>
           </p>
         </form>

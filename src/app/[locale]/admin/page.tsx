@@ -7,7 +7,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import Loading from "@/components/Loading";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
-import { useLocale } from "next-intl";
+import { useLocale } from "next-intl/client";
 
 interface ResetLog {
   timestamp: string;

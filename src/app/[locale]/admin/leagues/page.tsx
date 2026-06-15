@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/client";
-import { useLocale } from "next-intl";
+import { useLocale } from "next-intl/client";
 
 export default function AdminLeagues() {
   const [leagues, setLeagues] = useState<any[]>([]);

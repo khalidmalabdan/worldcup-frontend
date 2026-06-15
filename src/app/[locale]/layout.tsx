@@ -1,35 +1,31 @@
+import { NextIntlClientProvider } from "next-intl";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { setRequestLocale } from "next-intl/server";
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: {
+interface LocaleLayoutProps {
   children: ReactNode;
-  params: Promise<{ locale: string }>;
-}) {
-  try {
-    const { locale } = await params;
-    setRequestLocale(locale);
+  params: {
+    locale: string;
+  };
+}
 
-    return (
-      <html lang={locale}>
-        <body>{children}</body>
-      </html>
-    );
-  } catch (error) {
-    console.error('LocaleLayout error:', error);
-    const fallbackLocale = 'en';
-    setRequestLocale(fallbackLocale);
-    return (
-      <html lang={fallbackLocale}>
-        <body>
-          <div className="p-6 text-center">
-            <h1 className="text-red-600">Error in layout</h1>
-            <p>{error instanceof Error ? error.message : String(error)}</p>
-          </div>
-        </body>
-      </html>
-    );
+export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
+  const { locale } = params;
+
+  let messages;
+  try {
+    messages = (await import(`../../../messages/${locale}.json`)).default;
+  } catch {
+    notFound();
   }
+
+  return (
+    <html lang={locale}>
+      <body>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
+  );
 }

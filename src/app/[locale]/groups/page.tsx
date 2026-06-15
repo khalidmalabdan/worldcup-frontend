@@ -1,41 +1,72 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale } from "next-intl";
+
 import api from "@/lib/client";
-import { GROUPS, getGroupForMatch } from "@/utils/groups";
-import {
-  generateKnockoutBracket,
-  KnockoutPair,
-  TeamStanding as KnockoutTeamStanding,
-} from "@/utils/knockout";
 
 import PageContainer from "@/components/ui/PageContainer";
 import PageHeader from "@/components/ui/PageHeader";
 import Loading from "@/components/Loading";
 import EmptyState from "@/components/ui/EmptyState";
 
-// -----------------------------
-// Normalizers (runtime‑safe)
-// -----------------------------
-function normalizeMatch(m: any) {
+import { getGroupForMatch } from "@/utils/groups";
+import {
+  generateKnockoutBracket,
+  KnockoutPair,
+  TeamStanding as KnockoutTeamStanding
+} from "@/utils/knockout";
+
+// --------------------------------------------------
+// Types
+// --------------------------------------------------
+interface Match {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: "upcoming" | "live" | "finished";
+  kickoffTime: number;
+  group: string | null;
+}
+
+interface StandingRow {
+  team: string;
+  mp: number;
+  w: number;
+  d: number;
+  l: number;
+  gf: number;
+  ga: number;
+  gd: number;
+  pts: number;
+}
+
+// --------------------------------------------------
+// Normalizers
+// --------------------------------------------------
+function normalizeMatch(m: any): Match {
+  const home = m.homeTeam ?? m.home;
+  const away = m.awayTeam ?? m.away;
+
   return {
     id: m.id ?? m.matchId,
-    homeTeam: m.homeTeam ?? m.home,
-    awayTeam: m.awayTeam ?? m.away,
+    homeTeam: home,
+    awayTeam: away,
     homeScore: m.homeScore ?? m.home_score ?? null,
     awayScore: m.awayScore ?? m.away_score ?? null,
     status: m.status ?? "upcoming",
     kickoffTime: m.kickoffTime ?? m.kickoff_time ?? 0,
-    group: m.group ?? getGroupForMatch(m.homeTeam ?? m.home, m.awayTeam ?? m.away),
-    ...m,
+    group: m.group ?? getGroupForMatch(home, away)
   };
 }
 
-function normalizeStandings(groups: Record<string, any[]>) {
-  const normalized: Record<string, any[]> = {};
+function normalizeStandings(raw: Record<string, any[]>): Record<string, StandingRow[]> {
+  const out: Record<string, StandingRow[]> = {};
 
-  for (const key of Object.keys(groups)) {
-    normalized[key] = groups[key].map((t) => ({
+  for (const group of Object.keys(raw)) {
+    out[group] = raw[group].map((t) => ({
       team: t.team,
       mp: t.mp ?? t.played ?? 0,
       w: t.w ?? t.wins ?? 0,
@@ -44,23 +75,22 @@ function normalizeStandings(groups: Record<string, any[]>) {
       gf: t.gf ?? t.goalsFor ?? 0,
       ga: t.ga ?? t.goalsAgainst ?? 0,
       gd: t.gd ?? t.goalDiff ?? (t.goalsFor ?? 0) - (t.goalsAgainst ?? 0),
-      pts: t.pts ?? t.points ?? 0,
+      pts: t.pts ?? t.points ?? 0
     }));
   }
 
-  return normalized;
+  return out;
 }
 
-// -----------------------------
-// Flags (unchanged)
-// -----------------------------
+// --------------------------------------------------
+// Flags
+// --------------------------------------------------
 const FLAG_MAP: Record<string, string> = {
   Mexico: "🇲🇽",
   "South Africa": "🇿🇦",
   "South Korea": "🇰🇷",
   Czechia: "🇨🇿",
   Canada: "🇨🇦",
-  "Bosnia-Herzegovina": "🇧🇦",
   Qatar: "🇶🇦",
   Switzerland: "🇨🇭",
   Brazil: "🇧🇷",
@@ -72,8 +102,6 @@ const FLAG_MAP: Record<string, string> = {
   Australia: "🇦🇺",
   Turkey: "🇹🇷",
   Germany: "🇩🇪",
-  "Curaçao": "🇨🇼",
-  "Ivory Coast": "🇨🇮",
   Ecuador: "🇪🇨",
   Netherlands: "🇳🇱",
   Japan: "🇯🇵",
@@ -82,56 +110,48 @@ const FLAG_MAP: Record<string, string> = {
   Belgium: "🇧🇪",
   Egypt: "🇪🇬",
   Iran: "🇮🇷",
-  "New Zealand": "🇳🇿",
   Spain: "🇪🇸",
-  "Cape Verde Islands": "🇨🇻",
   "Saudi Arabia": "🇸🇦",
   Uruguay: "🇺🇾",
   France: "🇫🇷",
   Senegal: "🇸🇳",
-  Iraq: "🇮🇶",
-  Norway: "🇳🇴",
   Argentina: "🇦🇷",
   Algeria: "🇩🇿",
   Austria: "🇦🇹",
-  Jordan: "🇯🇴",
   Portugal: "🇵🇹",
-  "Congo DR": "🇨🇩",
-  Uzbekistan: "🇺🇿",
   Colombia: "🇨🇴",
   England: "🏴",
   Croatia: "🇭🇷",
   Ghana: "🇬🇭",
-  Panama: "🇵🇦",
+  Panama: "🇵🇦"
 };
 
 function getFlag(team: string) {
   return FLAG_MAP[team] ?? "🏳️";
 }
 
-// -----------------------------
+// --------------------------------------------------
 // Helpers
-// -----------------------------
-function computeGroupMatchday(matches: any[], groupKey: string): number {
-  const groupMatches = matches.filter((m) => m.group === groupKey);
-  const finished = groupMatches.filter((m) => m.status === "finished").length;
-
-  if (finished === 0) return 1;
+// --------------------------------------------------
+function computeMatchday(matches: Match[], group: string): number {
+  const finished = matches.filter((m) => m.group === group && m.status === "finished").length;
   if (finished <= 2) return 1;
   if (finished <= 4) return 2;
   return 3;
 }
 
-function groupHasLiveMatch(matches: any[], groupKey: string): boolean {
-  return matches.some((m) => m.group === groupKey && m.status === "live");
+function groupHasLive(matches: Match[], group: string): boolean {
+  return matches.some((m) => m.group === group && m.status === "live");
 }
 
-// -----------------------------
+// --------------------------------------------------
 // Component
-// -----------------------------
+// --------------------------------------------------
 export default function GroupsPage() {
-  const [groups, setGroups] = useState<Record<string, any[]> | null>(null);
-  const [matches, setMatches] = useState<any[]>([]);
+  const locale = useLocale();
+
+  const [groups, setGroups] = useState<Record<string, StandingRow[]> | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeMatchday, setActiveMatchday] = useState<number | "all">("all");
 
@@ -142,16 +162,11 @@ export default function GroupsPage() {
       try {
         const [standingsRes, matchesRes] = await Promise.all([
           api.get("/standings"),
-          api.get("/matches"),
+          api.get("/matches")
         ]);
 
-        const normalizedGroups = normalizeStandings(standingsRes.data.groups);
-        const normalizedMatches = (matchesRes.data.matches || matchesRes.data).map(
-          normalizeMatch
-        );
-
-        setGroups(normalizedGroups);
-        setMatches(normalizedMatches);
+        setGroups(normalizeStandings(standingsRes.data.groups));
+        setMatches((matchesRes.data.matches || matchesRes.data).map(normalizeMatch));
       } catch (err) {
         console.error("Failed to load group standings:", err);
         setGroups(null);
@@ -162,7 +177,6 @@ export default function GroupsPage() {
 
     load();
     interval = setInterval(load, 10_000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -203,21 +217,16 @@ export default function GroupsPage() {
       <div className="grid md:grid-cols-2 gap-8">
         {groupKeys.map((group) => {
           const standings = groups[group];
-          const matchday = computeGroupMatchday(matches, group);
-          const hasLive = groupHasLiveMatch(matches, group);
+          const matchday = computeMatchday(matches, group);
+          const hasLive = groupHasLive(matches, group);
 
           if (activeMatchday !== "all" && matchday !== activeMatchday) return null;
 
           return (
-            <div
-              key={group}
-              className="border rounded-lg overflow-hidden shadow bg-white"
-            >
+            <div key={group} className="border rounded-lg overflow-hidden shadow bg-white">
               <div className="px-4 py-2 bg-gray-100 border-b flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-800 text-lg">
-                    Group {group}
-                  </span>
+                  <span className="font-semibold text-gray-800 text-lg">Group {group}</span>
 
                   {hasLive && (
                     <span className="flex items-center gap-1 text-xs font-semibold text-red-600">
@@ -269,9 +278,7 @@ export default function GroupsPage() {
                         <td className="px-2 py-2 text-center">{row.gf}</td>
                         <td className="px-2 py-2 text-center">{row.ga}</td>
                         <td className="px-2 py-2 text-center">{row.gd}</td>
-                        <td className="px-2 py-2 text-center font-semibold">
-                          {row.pts}
-                        </td>
+                        <td className="px-2 py-2 text-center font-semibold">{row.pts}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -290,25 +297,21 @@ export default function GroupsPage() {
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {knockoutPairs.map((pair: KnockoutPair, idx: number) => (
+            {knockoutPairs.map((pair, idx) => (
               <div
                 key={idx}
                 className="border rounded-lg px-4 py-3 bg-white shadow-sm flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{getFlag(pair.home.team)}</span>
-                  <span className="font-medium text-gray-800">
-                    {pair.home.team}
-                  </span>
+                  <span className="font-medium text-gray-800">{pair.home.team}</span>
                 </div>
 
                 <span className="text-xs text-gray-400">vs</span>
 
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{getFlag(pair.away.team)}</span>
-                  <span className="font-medium text-gray-800">
-                    {pair.away.team}
-                  </span>
+                  <span className="font-medium text-gray-800">{pair.away.team}</span>
                 </div>
               </div>
             ))}

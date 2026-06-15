@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale } from "next-intl/client";
 
 export default function AdminLogin() {
   const [username, setUser] = useState("");
