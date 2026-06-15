@@ -1,5 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  return <div style={{ padding: 20 }}>Minimal homepage — sanity check</div>;
+export default function RootRedirect() {
+  redirect("/en");
 }
