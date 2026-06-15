@@ -37,12 +37,16 @@ export default function HomePage() {
     console.log("USEEFFECT START");
 
     async function load() {
+      const base = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const endpoint = "/matches/day/today";
+      const timestamp = Date.now();
+
       // --- DEBUG fetch to bypass axios baseURL issues and inspect raw response ---
-      const debugUrl = `${process.env.NEXT_PUBLIC_API_URL}/matches/day/today`;
+      const debugUrl = `${base}${endpoint}?t=${timestamp}`;
       console.log("DEBUG fetch URL:", debugUrl);
 
       try {
-        const r = await fetch(debugUrl, { cache: "no-store" });
+        const r = await fetch(debugUrl, { cache: "no-store", headers: { Accept: "application/json" } });
         const text = await r.text();
         console.log("DEBUG status:", r.status);
         console.log("DEBUG body (first 2000 chars):", text.slice(0, 2000));
@@ -51,11 +55,12 @@ export default function HomePage() {
       }
       // --- end debug fetch ---
 
+      // Robust axios + fallback fetch logic
       try {
-        // Force fresh request to avoid 304 cached responses
-        const res = await api.get("/matches/day/today", {
-          params: { t: Date.now() },
+        const res = await api.get(endpoint, {
+          params: { t: timestamp },
           headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+          validateStatus: (s) => s >= 200 && s < 400, // allow 304 through so we can inspect it
         });
 
         console.log("AXIOS status:", res.status);
@@ -70,15 +75,37 @@ export default function HomePage() {
         // Defensive extraction of matches
         let raw: any[] = [];
 
-        if (res.status === 304) {
-          console.warn("Received 304 Not Modified from API; treating as empty result.");
-          raw = [];
+        if (res.status === 304 || !res.data) {
+          console.warn("Axios returned 304 or empty body; falling back to forced fetch.");
+          // fallback to forced fetch
+          try {
+            const r = await fetch(debugUrl, { cache: "no-store", headers: { Accept: "application/json" } });
+            console.log("FETCH fallback status:", r.status);
+            const text = await r.text();
+            console.log("FETCH fallback body preview:", text.slice(0, 1000));
+            let json;
+            try {
+              json = JSON.parse(text);
+            } catch (e) {
+              console.error("FETCH fallback returned non-JSON body:", e);
+              setError("API returned non-JSON response.");
+              setMatches([]);
+              setLoading(false);
+              return;
+            }
+            raw = Array.isArray(json) ? json : Array.isArray(json.matches) ? json.matches : [];
+          } catch (fetchErr) {
+            console.error("Forced fetch failed:", fetchErr);
+            setError("Failed to fetch fresh data from API.");
+            setMatches([]);
+            setLoading(false);
+            return;
+          }
         } else if (Array.isArray(res.data)) {
           raw = res.data;
         } else if (Array.isArray(res.data?.matches)) {
           raw = res.data.matches;
         } else if (res.data && typeof res.data === "object") {
-          // If backend returns object with other shape, try to find array fields
           if (Array.isArray(res.data.data)) raw = res.data.data;
           else if (Array.isArray(res.data.result)) raw = res.data.result;
           else {
@@ -90,16 +117,34 @@ export default function HomePage() {
           raw = [];
         }
 
-        // Normalize and set
         setMatches((raw ?? []).map(normalizeMatch));
+        setError(null);
       } catch (err: any) {
         console.error("LOAD ERROR:", err?.message ?? err, err?.stack ?? "");
-        setError(
-          err?.response?.data?.message ||
-            err?.message ||
-            "Could not load today’s matches."
-        );
-        setMatches([]);
+        // Try forced fetch as last resort
+        try {
+          const r = await fetch(debugUrl, { cache: "no-store", headers: { Accept: "application/json" } });
+          console.log("FETCH fallback status:", r.status);
+          const text = await r.text();
+          console.log("FETCH fallback body preview:", text.slice(0, 1000));
+          let json;
+          try {
+            json = JSON.parse(text);
+          } catch (e) {
+            console.error("FETCH fallback returned non-JSON body:", e);
+            setError(err?.message || "Could not load matches.");
+            setMatches([]);
+            setLoading(false);
+            return;
+          }
+          const raw = Array.isArray(json) ? json : Array.isArray(json.matches) ? json.matches : [];
+          setMatches((raw ?? []).map(normalizeMatch));
+          setError(null);
+        } catch (fetchErr) {
+          console.error("Both axios and fetch failed:", fetchErr);
+          setError(err?.response?.data?.message || err?.message || "Could not load today’s matches.");
+          setMatches([]);
+        }
       } finally {
         setLoading(false);
       }
