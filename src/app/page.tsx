@@ -1,4 +1,5 @@
 "use client";
+console.log("BASE URL:", process.env.NEXT_PUBLIC_API_URL);
 
 import { useEffect, useState } from "react";
 import api from "@/lib/client";
