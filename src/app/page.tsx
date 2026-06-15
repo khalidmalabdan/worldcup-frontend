@@ -32,16 +32,37 @@ export default function HomePage() {
     console.log("BASE URL:", process.env.NEXT_PUBLIC_API_URL);
 
     async function load() {
+      // --- DEBUG fetch to bypass axios baseURL issues and inspect raw response ---
+      const debugUrl = `${process.env.NEXT_PUBLIC_API_URL}/matches/day/today`;
+      console.log("DEBUG fetch URL:", debugUrl);
       try {
-        const res = await api.get("/matches/day/today");
+        const r = await fetch(debugUrl, { cache: "no-store" });
+        const text = await r.text();
+        console.log("DEBUG status:", r.status);
+        console.log("DEBUG body (first 1000 chars):", text.slice(0, 1000));
+      } catch (e) {
+        console.error("DEBUG fetch failed:", e);
+      }
+      // --- end debug fetch ---
+
+      try {
+        // Force a fresh request to avoid 304 cached responses
+        const res = await api.get("/matches/day/today", {
+          params: { t: Date.now() },
+          headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+        });
 
         // Safely extract matches
-        let raw = [];
+        let raw: any[] = [];
 
         if (Array.isArray(res.data)) {
           raw = res.data;
         } else if (Array.isArray(res.data?.matches)) {
           raw = res.data.matches;
+        } else if (res.status === 304) {
+          // 304: Not Modified — be defensive and keep existing matches or empty
+          console.warn("Received 304 Not Modified from API; using empty result.");
+          raw = [];
         } else {
           console.warn("Unexpected API response:", res.data);
           raw = [];
