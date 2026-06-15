@@ -1,7 +1,12 @@
-export default function LocaleHome() {
-  return <div>Locale home OK</div>;
-}
+// export default function LocaleHome() {
+//   return <div>Locale home OK</div>;
+// }
 
+import HomeClient from "./HomeClient";
+
+export default function HomePage() {
+  return <HomeClient />;
+}
 
 // "use client";
 
