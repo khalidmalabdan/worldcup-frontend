@@ -1,51 +1,58 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function PullToRefresh({ onRefresh, children }: any) {
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const startY = useRef<number | null>(null);
 
-  const MAX_PULL = 80; // how far user can pull
+  const MAX_PULL = 80;
 
-  const handleTouchStart = (e: any) => {
-    if (window.scrollY === 0) {
-      startY.current = e.touches[0].clientY;
-    }
-  };
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-  const handleTouchMove = (e: any) => {
-    if (startY.current === null) return;
+    const handleTouchStart = (e: any) => {
+      if (window.scrollY === 0) {
+        startY.current = e.touches[0].clientY;
+      }
+    };
 
-    const distance = e.touches[0].clientY - startY.current;
+    const handleTouchMove = (e: any) => {
+      if (startY.current === null) return;
 
-    if (distance > 0) {
-      e.preventDefault();
-      setPull(Math.min(distance, MAX_PULL));
-    }
-  };
+      const distance = e.touches[0].clientY - startY.current;
 
-  const handleTouchEnd = async () => {
-    if (pull > 60) {
-      setRefreshing(true);
-      await onRefresh();
-      setRefreshing(false);
-    }
+      if (distance > 0) {
+        e.preventDefault();
+        setPull(Math.min(distance, MAX_PULL));
+      }
+    };
 
-    setPull(0);
-    startY.current = null;
-  };
+    const handleTouchEnd = async () => {
+      if (pull > 60) {
+        setRefreshing(true);
+        await onRefresh();
+        setRefreshing(false);
+      }
+
+      setPull(0);
+      startY.current = null;
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: false });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [pull, onRefresh]);
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ touchAction: "pan-x" }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Pull indicator */}
+    <div className="min-h-screen" style={{ touchAction: "pan-x" }}>
       <div
         className="flex justify-center items-center text-gray-400 transition-all"
         style={{
@@ -60,7 +67,6 @@ export default function PullToRefresh({ onRefresh, children }: any) {
         )}
       </div>
 
-      {/* Page content */}
       {children}
     </div>
   );

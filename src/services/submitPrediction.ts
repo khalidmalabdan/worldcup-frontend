@@ -6,7 +6,7 @@ export interface PredictionPayload {
 
 export async function submitPrediction(payload: PredictionPayload) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/predictions`,
+    `${process.env.NEXT_PUBLIC_API_URL}/predictions`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

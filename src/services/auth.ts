@@ -4,7 +4,7 @@ export interface AuthResponse {
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`,
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

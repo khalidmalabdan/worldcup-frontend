@@ -1,20 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/api";
+import { submitPrediction } from "@/services/submitPrediction";
 
 export default function PredictionForm({ match }: any) {
   const [homeScore, setHomeScore] = useState("");
   const [awayScore, setAwayScore] = useState("");
 
   async function submit() {
-    await api.savePrediction(match.id, {
+    await submitPrediction({
+      matchId: match.id,
       homeScore: Number(homeScore),
       awayScore: Number(awayScore),
-      scorers: [],
-      assisters: [],
-      goalMinutes: [],
-      doublePoint: false,
     });
 
     alert("Prediction saved");
