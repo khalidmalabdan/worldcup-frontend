@@ -28,15 +28,30 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("BASE URL:", process.env.NEXT_PUBLIC_API_URL);
+
     async function load() {
       try {
         const res = await api.get("/matches/day/today");
-        const raw = res.data.matches || res.data;
+
+        // Safely extract matches
+        let raw = [];
+
+        if (Array.isArray(res.data)) {
+          raw = res.data;
+        } else if (Array.isArray(res.data?.matches)) {
+          raw = res.data.matches;
+        } else {
+          console.warn("Unexpected API response:", res.data);
+          raw = [];
+        }
+
         setMatches(raw.map(normalizeMatch));
       } catch (err: any) {
         console.error("Failed to load today's matches:", err);
         setError(
-          err?.response?.data?.message || err?.message ||
+          err?.response?.data?.message ||
+            err?.message ||
             "Could not load today’s matches."
         );
         setMatches([]);
