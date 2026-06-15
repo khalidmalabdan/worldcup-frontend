@@ -1,13 +1,13 @@
-import React from "react";
+// import React from "react";
 
 
-export default function LocaleLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
-}
+// export default function LocaleLayout({ children }: { children: React.ReactNode }) {
+//   return (
+//     <html lang="en">
+//       <body>{children}</body>
+//     </html>
+//   );
+// }
 
 
 // import type { ReactNode } from "react";
@@ -31,3 +31,18 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
 //     </html>
 //   );
 // }
+
+import "./globals.css";
+
+export const metadata = {
+  title: "World Cup App",
+  description: "Predictions and standings",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
