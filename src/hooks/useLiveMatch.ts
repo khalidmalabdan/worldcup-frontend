@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { socket } from "@/lib/socket";
+import { getSocket } from "@/lib/socket";
 
 export function useLiveMatch(matchId: string | null) {
   const [minute, setMinute] = useState<number | null>(null);
@@ -10,6 +10,9 @@ export function useLiveMatch(matchId: string | null) {
 
   useEffect(() => {
     if (!matchId) return;
+
+    const socket = getSocket();
+    if (!socket) return; // SSR safety
 
     socket.emit("match:subscribe", matchId);
 

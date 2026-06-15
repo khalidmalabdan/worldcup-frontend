@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/client";
-import { socket } from "@/lib/socket";
+import { getSocket } from "@/lib/socket";
 import PredictionForm from "./PredictionForm";
 import Loading from "@/components/Loading";
 import EmptyState from "@/components/ui/EmptyState";
@@ -86,6 +86,9 @@ export default function MatchDetailsPage() {
   --------------------------------------------------- */
   useEffect(() => {
     if (!id) return;
+
+    const socket = getSocket();
+    if (!socket) return;
 
     socket.emit("match:subscribe", id);
 
@@ -216,9 +219,8 @@ export default function MatchDetailsPage() {
         </div>
       </div>
 
-      {/* ⭐ TEAM PLAYERS SECTION */}
+      {/* TEAM PLAYERS */}
       <div className="grid grid-cols-2 gap-6 mt-4">
-        {/* Home players */}
         <div>
           <h3 className="font-semibold text-lg mb-2">
             {match.homeTeam.name} — {t("players")}
@@ -230,7 +232,6 @@ export default function MatchDetailsPage() {
           </ul>
         </div>
 
-        {/* Away players */}
         <div>
           <h3 className="font-semibold text-lg mb-2">
             {match.awayTeam.name} — {t("players")}
