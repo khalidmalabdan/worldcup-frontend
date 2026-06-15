@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminApi } from "@/api/admin";
+import api from "@/lib/client";
 import PageContainer from "@/components/ui/PageContainer";
 import PageHeader from "@/components/ui/PageHeader";
 import Loading from "@/components/Loading";
@@ -14,7 +14,7 @@ interface ResetLog {
   message: string;
 }
 
-// Normalize backend logs
+// Normalize backend logs safely
 function normalizeLogs(list: any[]): ResetLog[] {
   return (list ?? []).map((l) => ({
     timestamp: l.timestamp ?? "",
@@ -30,8 +30,8 @@ export default function AdminDashboard() {
 
   async function loadLogs() {
     try {
-      const res = await adminApi.get("/reset-logs");
-      setLogs(normalizeLogs(res.data));
+      const res = await api.get("/admin/reset-logs");
+      setLogs(normalizeLogs(res.data ?? []));
     } catch (err) {
       console.error("Failed to load logs:", err);
       setLogs([]);
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
 
   async function call(endpoint: string) {
     try {
-      const res = await adminApi.post(`/${endpoint}`);
+      const res = await api.post(`/admin/${endpoint}`);
       setMsg(res.data?.message ?? "Action completed");
       await loadLogs();
     } catch (err) {
