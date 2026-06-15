@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/client";
+import { useLocale } from "next-intl";
 
 export default function AdminLeagues() {
   const [leagues, setLeagues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const locale = useLocale();
 
   useEffect(() => {
     async function load() {
@@ -43,7 +45,7 @@ export default function AdminLeagues() {
           {leagues.map((l: any) => (
             <li key={l.id} className="border p-3 rounded bg-white shadow-sm">
               <a
-                href={`/admin/leagues/${l.id}`}
+                href={`/${locale}/admin/leagues/${l.id}`}
                 className="text-blue-600 hover:underline font-semibold"
               >
                 {l.name}

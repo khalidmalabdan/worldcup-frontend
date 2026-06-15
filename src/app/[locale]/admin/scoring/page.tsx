@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/client";
-import { adminApi } from "@/api/admin";
 import OverrideModal from "./OverrideModal";
 
-// ✅ Runtime‑risk fix: normalize backend match shape
+// Normalize backend match shape
 function normalizeMatch(m: any) {
   return {
     id: m.id ?? m.matchId,
@@ -26,7 +25,6 @@ export default function AdminScoringPage() {
         const res = await api.get("/matches/finished");
         const data = res.data;
 
-        // ✅ Apply normalization here
         const raw = data.matches || data;
         setMatches(raw.map(normalizeMatch));
       } catch (err) {
@@ -42,7 +40,7 @@ export default function AdminScoringPage() {
 
   const call = async (path: string) => {
     try {
-      await adminApi.post(path);
+      await api.post(`/admin${path}`);
       alert("Action completed");
     } catch (err) {
       console.error("Admin scoring action failed:", err);

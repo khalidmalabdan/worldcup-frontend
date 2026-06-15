@@ -1,12 +1,15 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 
 export default function AdminLogin() {
   const [username, setUser] = useState("");
   const [password, setPass] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+  const locale = useLocale();
 
   async function login() {
     setError("");
@@ -26,7 +29,7 @@ export default function AdminLogin() {
     // Store access token only (refresh token is HttpOnly cookie)
     localStorage.setItem("adminAccess", data.accessToken);
 
-    router.push("/admin");
+    router.push(`/${locale}/admin`);
   }
 
   return (

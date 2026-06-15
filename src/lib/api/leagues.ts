@@ -80,6 +80,21 @@ export async function kickMember(leagueId: string, memberId: string) {
   return res.data;
 }
 
+// manual override over member points (for correcting errors or resolving disputes)
+export async function setMemberPoints(
+  leagueId: string,
+  userId: string,
+  points: number
+) {
+  const res = await api.post("/leagues/admin/set-points", {
+    leagueId,
+    userId,
+    points,
+  });
+
+  return res.data;
+}
+
 export async function updateMemberRole(
   leagueId: string,
   memberId: string,

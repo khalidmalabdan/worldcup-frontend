@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { adminApi } from "@/api/admin";
+import api from "@/lib/client";
 
 interface OverrideModalProps {
   matchId: string;
@@ -19,8 +19,8 @@ export default function OverrideModal({ matchId, onClose }: OverrideModalProps) 
     }
 
     try {
-      const res = await adminApi.post(
-        `/scoring/override/${matchId}/${userId}`,
+      const res = await api.post(
+        `/admin/scoring/override/${matchId}/${userId}`,
         { points: Number(points) }
       );
 

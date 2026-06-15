@@ -7,6 +7,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import Loading from "@/components/Loading";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
+import { useLocale } from "next-intl";
 
 interface ResetLog {
   timestamp: string;
@@ -14,7 +15,6 @@ interface ResetLog {
   message: string;
 }
 
-// Normalize backend logs safely
 function normalizeLogs(list: any[]): ResetLog[] {
   return (list ?? []).map((l) => ({
     timestamp: l.timestamp ?? "",
@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [msg, setMsg] = useState("");
   const [logs, setLogs] = useState<ResetLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const locale = useLocale();
 
   async function loadLogs() {
     try {
@@ -61,7 +62,6 @@ export default function AdminDashboard() {
     <PageContainer size="md">
       <PageHeader title="Admin Dashboard" />
 
-      {/* ACTION BUTTONS */}
       <div className="flex gap-4">
         <Button variant="primary" onClick={() => call("sync")}>
           Sync Matches
@@ -76,10 +76,8 @@ export default function AdminDashboard() {
         </Button>
       </div>
 
-      {/* MESSAGE */}
       {msg && <p className="text-lg font-semibold text-gray-700">{msg}</p>}
 
-      {/* RESET LOGS */}
       <div>
         <h2 className="text-xl font-bold mb-3">Reset Logs</h2>
 
@@ -102,7 +100,7 @@ export default function AdminDashboard() {
       </div>
 
       <a
-        href="/admin/leagues"
+        href={`/${locale}/admin/leagues`}
         className="inline-block mt-4 text-blue-600 hover:underline"
       >
         View All Leagues →
