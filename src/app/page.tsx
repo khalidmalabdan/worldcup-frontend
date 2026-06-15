@@ -1,9 +1,7 @@
 "use client";
-console.log("BASE URL:", process.env.NEXT_PUBLIC_API_URL);
 
 import { useEffect, useState } from "react";
 import api from "@/lib/client";
-import MatchCard from "@/components/MatchCard";
 import Loading from "@/components/Loading";
 import EmptyState from "@/components/ui/EmptyState";
 import PageContainer from "@/components/ui/PageContainer";
@@ -12,13 +10,13 @@ import PageHeader from "@/components/ui/PageHeader";
 // Normalize backend match shape
 function normalizeMatch(m: any) {
   return {
-    id: m.id ?? m.matchId,
-    homeTeam: m.homeTeam ?? m.home,
-    awayTeam: m.awayTeam ?? m.away,
-    homeScore: m.homeScore ?? m.home_score ?? null,
-    awayScore: m.awayScore ?? m.away_score ?? null,
-    status: m.status ?? "upcoming",
-    group: m.group ?? null,
+    id: m?.id ?? m?.matchId ?? null,
+    homeTeam: m?.homeTeam ?? m?.home ?? null,
+    awayTeam: m?.awayTeam ?? m?.away ?? null,
+    homeScore: m?.homeScore ?? m?.home_score ?? null,
+    awayScore: m?.awayScore ?? m?.away_score ?? null,
+    status: m?.status ?? "upcoming",
+    group: m?.group ?? null,
     ...m,
   };
 }
@@ -27,50 +25,75 @@ export default function HomePage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // mark client so we avoid any browser-only render during SSR
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     console.log("BASE URL:", process.env.NEXT_PUBLIC_API_URL);
+    console.log("USEEFFECT START");
 
     async function load() {
       // --- DEBUG fetch to bypass axios baseURL issues and inspect raw response ---
       const debugUrl = `${process.env.NEXT_PUBLIC_API_URL}/matches/day/today`;
       console.log("DEBUG fetch URL:", debugUrl);
+
       try {
         const r = await fetch(debugUrl, { cache: "no-store" });
         const text = await r.text();
         console.log("DEBUG status:", r.status);
-        console.log("DEBUG body (first 1000 chars):", text.slice(0, 1000));
-      } catch (e) {
-        console.error("DEBUG fetch failed:", e);
+        console.log("DEBUG body (first 2000 chars):", text.slice(0, 2000));
+      } catch (e: any) {
+        console.error("DEBUG fetch failed:", e?.message ?? e);
       }
       // --- end debug fetch ---
 
       try {
-        // Force a fresh request to avoid 304 cached responses
+        // Force fresh request to avoid 304 cached responses
         const res = await api.get("/matches/day/today", {
           params: { t: Date.now() },
           headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
         });
 
-        // Safely extract matches
+        console.log("AXIOS status:", res.status);
+        console.log("AXIOS data type:", typeof res.data);
+        try {
+          const preview = JSON.stringify(res.data).slice(0, 1000);
+          console.log("AXIOS data preview (first 1000 chars):", preview);
+        } catch (e) {
+          console.warn("Could not stringify res.data for preview", e);
+        }
+
+        // Defensive extraction of matches
         let raw: any[] = [];
 
-        if (Array.isArray(res.data)) {
+        if (res.status === 304) {
+          console.warn("Received 304 Not Modified from API; treating as empty result.");
+          raw = [];
+        } else if (Array.isArray(res.data)) {
           raw = res.data;
         } else if (Array.isArray(res.data?.matches)) {
           raw = res.data.matches;
-        } else if (res.status === 304) {
-          // 304: Not Modified — be defensive and keep existing matches or empty
-          console.warn("Received 304 Not Modified from API; using empty result.");
-          raw = [];
+        } else if (res.data && typeof res.data === "object") {
+          // If backend returns object with other shape, try to find array fields
+          if (Array.isArray(res.data.data)) raw = res.data.data;
+          else if (Array.isArray(res.data.result)) raw = res.data.result;
+          else {
+            console.warn("Unexpected API response shape:", Object.keys(res.data));
+            raw = [];
+          }
         } else {
-          console.warn("Unexpected API response:", res.data);
+          console.warn("Unexpected or empty res.data:", res.data);
           raw = [];
         }
 
-        setMatches(raw.map(normalizeMatch));
+        // Normalize and set
+        setMatches((raw ?? []).map(normalizeMatch));
       } catch (err: any) {
-        console.error("Failed to load today's matches:", err);
+        console.error("LOAD ERROR:", err?.message ?? err, err?.stack ?? "");
         setError(
           err?.response?.data?.message ||
             err?.message ||
@@ -82,8 +105,17 @@ export default function HomePage() {
       }
     }
 
-    load();
-  }, []);
+    // run load only on client
+    if (isClient) {
+      load();
+    } else {
+      // if not client yet, schedule a short delay to let hydration finish
+      const id = setTimeout(() => {
+        load();
+      }, 50);
+      return () => clearTimeout(id);
+    }
+  }, [isClient]);
 
   if (loading) return <Loading />;
 
@@ -94,12 +126,20 @@ export default function HomePage() {
       {error ? (
         <EmptyState message={error} />
       ) : matches.length === 0 ? (
-        <EmptyState message="No matches scheduled for today." />
+        // temporary: render raw JSON to avoid child component crashes while debugging
+        <div className="prose">
+          <EmptyState message="No matches scheduled for today." />
+          <h3 className="mt-4">Raw matches (debug)</h3>
+          <pre className="whitespace-pre-wrap break-words bg-gray-50 p-3 rounded">
+            {JSON.stringify(matches, null, 2)}
+          </pre>
+        </div>
       ) : (
         <div className="space-y-6">
-          {matches.map((match) => (
-            <MatchCard key={match.id} match={match} />
-          ))}
+          {/* TEMPORARY: render JSON instead of MatchCard while debugging */}
+          <pre className="whitespace-pre-wrap break-words">
+            {JSON.stringify(matches, null, 2)}
+          </pre>
         </div>
       )}
     </PageContainer>
