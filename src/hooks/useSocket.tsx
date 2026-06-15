@@ -1,14 +1,15 @@
+"use client";
+
 import { useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
+import { getSocket } from "@/lib/socket";
 
 export default function useSocket(onConnect?: (s: Socket) => void) {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL!, {
-      transports: ["websocket"],
-      withCredentials: true,
-    });
+    const socket = getSocket();
+    if (!socket) return;
 
     socketRef.current = socket;
 
@@ -22,7 +23,8 @@ export default function useSocket(onConnect?: (s: Socket) => void) {
     });
 
     return () => {
-      socket.disconnect();
+      socket.off("connect");
+      socket.off("disconnect");
     };
   }, []);
 

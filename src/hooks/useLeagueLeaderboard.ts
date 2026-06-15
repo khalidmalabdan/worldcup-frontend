@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
-import { io as clientIo } from "socket.io-client";
-import { getLeagueLeaderboard } from "@/lib/api/leagues";
+"use client";
 
-const socket = clientIo(process.env.NEXT_PUBLIC_API_URL as string, {
-  transports: ["websocket"],
-});
+import { useEffect, useState } from "react";
+import { getSocket } from "@/lib/socket";
+import { getLeagueLeaderboard } from "@/lib/api/leagues";
 
 export function useLeagueLeaderboard(leagueId: string) {
   const [members, setMembers] = useState<any[]>([]);
@@ -21,6 +19,9 @@ export function useLeagueLeaderboard(leagueId: string) {
     if (!leagueId) return;
 
     load();
+
+    const socket = getSocket();
+    if (!socket) return;
 
     socket.emit("join:league", leagueId);
 
