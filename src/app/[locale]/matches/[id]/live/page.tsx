@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import api from "@/lib/client";
-import useSocket from "@/hooks/useSocket";
+import { getSocket } from "@/lib/socket";
 import { useTranslations } from "next-intl";
 
 interface MatchEvent {
@@ -11,7 +11,7 @@ interface MatchEvent {
   type: string;
   scorer?: string;
   assist?: string;
-  team?: string; // "home" | "away"
+  team?: string;
 }
 
 interface Match {
@@ -50,8 +50,11 @@ export default function LiveMatchTracker() {
   }, [id]);
 
   // Live socket updates
-  useSocket((socket) => {
+  useEffect(() => {
     if (!id) return;
+
+    const socket = getSocket();
+    if (!socket) return;
 
     socket.emit("match:subscribe", id);
 
@@ -76,7 +79,13 @@ export default function LiveMatchTracker() {
         }
       }
     );
-  });
+
+    return () => {
+      socket.off("match:update");
+      socket.off("match:minute");
+      socket.off("match:final");
+    };
+  }, [id]);
 
   if (loading || !match) {
     return (
@@ -103,9 +112,7 @@ export default function LiveMatchTracker() {
     <div className="max-w-3xl mx-auto p-6 space-y-10">
       {/* HEADER */}
       <div className="text-center space-y-4">
-        {/* Teams */}
         <div className="flex items-center justify-center gap-6">
-          {/* Home */}
           <div className="flex flex-col items-center">
             {match.homeFlag && (
               <img
@@ -116,13 +123,11 @@ export default function LiveMatchTracker() {
             <span className="text-xl font-semibold">{match.homeTeam}</span>
           </div>
 
-          {/* Score */}
           <div className="text-5xl font-bold animate-pulse">
             {match.homeScore} <span className="text-gray-500">-</span>{" "}
             {match.awayScore}
           </div>
 
-          {/* Away */}
           <div className="flex flex-col items-center">
             {match.awayFlag && (
               <img
@@ -134,7 +139,6 @@ export default function LiveMatchTracker() {
           </div>
         </div>
 
-        {/* Live minute / status */}
         {match.status === "live" && (
           <div className="text-red-600 font-bold text-lg animate-pulse">
             {liveMinute !== null ? `${liveMinute}’ ${t("live")}` : t("live")}
@@ -154,7 +158,7 @@ export default function LiveMatchTracker() {
         )}
       </div>
 
-      {/* SPLIT TIMELINE */}
+      {/* TIMELINE */}
       <div>
         <h2 className="text-xl font-semibold mb-3">{t("liveTimeline")}</h2>
 
@@ -163,7 +167,6 @@ export default function LiveMatchTracker() {
         )}
 
         <div className="relative mt-6">
-          {/* Center vertical line */}
           <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-300 -translate-x-1/2" />
 
           <div className="space-y-8">
